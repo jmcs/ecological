@@ -14,7 +14,7 @@ Level, that is ``INFO`` by default, you could simply declare your configuration 
 
 .. code-block:: python
 
-    class Configuration(ecology.AutoConfig):
+    class Configuration(ecological.AutoConfig):
         port: int
         debug: bool
         log_level: str = "INFO"
@@ -32,7 +32,7 @@ Typing Support
 .. code-block:: python
 
 
-    class Configuration(ecology.AutoConfig):
+    class Configuration(ecological.AutoConfig):
         list_of_values: List[str]
 
 Will automatically parse the environment variable value as a list.
@@ -46,7 +46,7 @@ You can also decide to prefix your application configuration, for example, to av
 
 .. code-block:: python
 
-    class Configuration(ecology.AutoConfig, prefix='myapp'):
+    class Configuration(ecological.AutoConfig, prefix='myapp'):
         home: str
 
 
@@ -89,10 +89,10 @@ Nested Configuration
 .. code-block:: python
 
 
-    class Configuration(ecology.AutoConfig):
+    class Configuration(ecological.AutoConfig):
         integer: int
 
-        class Nested(ecology.AutoConfig, prefix='nested'):
+        class Nested(ecological.AutoConfig, prefix='nested'):
             boolean: bool
 
 This way you can group related configuration properties hierarchically.
