@@ -6,7 +6,7 @@ import platform
 from setuptools import setup, find_packages
 
 VERSION_MAJOR = 1
-VERSION_MINOR = 0
+VERSION_MINOR = 1
 VERSION = '{VERSION_MAJOR}.{VERSION_MINOR}'.format_map(locals())
 
 python_version_major, python_version_minor = (int(version) for version in platform.python_version_tuple()[:-1])

@@ -70,9 +70,13 @@ class Variable:
         :param wanted_type: type to return
         :return: value as wanted_type
         """
-        raw_value = os.environ.get(self.name, self.default)
-        if raw_value is _NO_DEFAULT:
-            raise AttributeError(f"Configuration error: '{self.name}' is not set.")
+        try:
+            raw_value = os.environ[self.name]
+        except KeyError:
+            if self.default is _NO_DEFAULT:
+                raise AttributeError(f"Configuration error: '{self.name}' is not set.")
+            else:
+                return self.default
 
         try:
             value = self.transform(raw_value, wanted_type)
