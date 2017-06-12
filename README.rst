@@ -69,11 +69,11 @@ value.
 
 ``ecological.Variable`` receives the following parameters:
 
-- **``variable_name``** (mandatory) - exact name of the environment variable that will be used.
-- **``default``** (optional) - default value for the property if it isn't set.
-- **``transform``** (optional) - function that converts the string in the environment to the value and type you
-                                 expect in your application. The default ``transform`` function will try to cast the
-                                 string to the annotation type of the property.
+- ``variable_name`` (mandatory) - exact name of the environment variable that will be used.
+- ``default`` (optional) - default value for the property if it isn't set.
+- ``transform`` (optional) - function that converts the string in the environment to the value and type you
+  expect in your application. The default ``transform`` function will try to cast the string to the annotation 
+  type of the property.
 
 Transformation function
 .......................
