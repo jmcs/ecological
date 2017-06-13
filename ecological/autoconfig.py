@@ -110,19 +110,18 @@ class ConfigMeta(type):
             if attribute_name.startswith('_'):
                 # private attributes are not changed
                 continue
-            default = attribute_dict.get(attribute_name, _NO_DEFAULT)
-            if isinstance(default, Variable):
-                attribute = default
-            elif isinstance(default, ConfigMeta):
+            if isinstance(default_value, Variable):
+                attribute = default_value
+            elif isinstance(default_value, ConfigMeta):
                 # passthrough for nested configs
-                attribute_dict[attribute_name] = default
+                attribute_dict[attribute_name] = default_value
                 continue
             else:
                 if prefix:
                     env_variable_name = f"{prefix}_{attribute_name}".upper()
                 else:
                     env_variable_name = attribute_name.upper()
-                attribute = Variable(env_variable_name, default)
+                attribute = Variable(env_variable_name, default_value)
 
             attribute_type = annotations.get(attribute_name, str)  # by default attributes are strings
             value = attribute.get(attribute_type)
