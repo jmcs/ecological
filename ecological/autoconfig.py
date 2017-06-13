@@ -1,11 +1,20 @@
-from typing import (AnyStr, ByteString, Callable, Counter, Deque, Dict, FrozenSet,
-                    GenericMeta, List, Optional, Set, Tuple, Any, TypeVar)
+from typing import (AnyStr, ByteString, Callable, Dict, FrozenSet, GenericMeta, List, Optional, Set, Tuple, Any,
+                    TypeVar)
 
 import os
 
 import ast
 
 import collections
+
+
+_NOT_IMPORTED = object()
+
+
+try:  # Types added in Python 3.6.1
+    from typing import Counter, Deque
+except ImportError:
+    Deque = Counter = _NOT_IMPORTED
 
 _NO_DEFAULT = object()
 TYPES_THAT_NEED_TO_BE_PARSED = [bool, list, set, tuple, dict]
