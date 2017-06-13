@@ -1,5 +1,10 @@
-from typing import (AnyStr, ByteString, Callable, Counter, Deque, Dict, FrozenSet,
+from typing import (AnyStr, ByteString, Callable, Dict, FrozenSet,
                     GenericMeta, List, Optional, Set, Tuple, Any, TypeVar)
+try:
+    from typing import Counter, Deque
+    collection_types = True
+except ImportError:
+    collection_types = False
 
 import os
 
@@ -12,8 +17,6 @@ TYPES_THAT_NEED_TO_BE_PARSED = [bool, list, set, tuple, dict]
 TYPING_TO_REGULAR_TYPE = {
     AnyStr: str,
     ByteString: bytes,
-    Counter: collections.Counter,
-    Deque: collections.deque,
     Dict: dict,
     FrozenSet: frozenset,
     List: list,
@@ -21,6 +24,9 @@ TYPING_TO_REGULAR_TYPE = {
     Tuple: tuple
 }
 
+if collection_types:
+    TYPING_TO_REGULAR_TYPE[Counter] = collections.Counter
+    TYPING_TO_REGULAR_TYPE[Deque] = collections.Deque
 
 WantedType = TypeVar('WantedType')
 
