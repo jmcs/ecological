@@ -1,14 +1,16 @@
-==========
-Ecological
-==========
-
 .. image:: https://travis-ci.org/jmcs/ecological.svg?branch=master
     :target: https://travis-ci.org/jmcs/ecological
 
 .. image:: https://api.codacy.com/project/badge/Grade/1ff45d0e1a5a40b8ad0569e3edb0539d
    :alt: Codacy Badge
    :target: https://www.codacy.com/app/jmcs/ecological?utm_source=github.com&utm_medium=referral&utm_content=jmcs/ecological&utm_campaign=badger
+   
+.. image:: https://api.codacy.com/project/badge/Coverage/1ff45d0e1a5a40b8ad0569e3edb0539d    
+   :target: https://www.codacy.com/app/jmcs/ecological?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jmcs/ecological&amp;utm_campaign=Badge_Coverage
 
+==========
+Ecological
+==========
 
 ``Ecological`` combines PEP526_ and environment variables to make the configuration of
 `12 factor apps <https://12factor.net/config>`_ easy.
