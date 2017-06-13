@@ -2,17 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import platform
+import sys
 
 from setuptools import setup, find_packages
 
 VERSION_MAJOR = 1
-VERSION_MINOR = 1
-VERSION = '{VERSION_MAJOR}.{VERSION_MINOR}'.format_map(locals())
+VERSION_MINOR = 2
+VERSION = f'{VERSION_MAJOR}.{VERSION_MINOR}'
 
 python_version_major, python_version_minor = (int(version) for version in platform.python_version_tuple()[:-1])
 
-if python_version_major < 3:
-    print("Ecological doesn't support Python 2")
+if (python_version_major, python_version_minor) < (3, 6):
+    print("Ecological doesn't support Python <= 3.6")
+    sys.exit(1)
 
 
 setup(
