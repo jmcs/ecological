@@ -99,3 +99,8 @@ This way you can group related configuration properties hierarchically.
 
 .. _PEP484: https://www.python.org/dev/peps/pep-0484/
 .. _PEP526: https://www.python.org/dev/peps/pep-0526/
+
+
+.. image:: https://api.codacy.com/project/badge/Grade/1ff45d0e1a5a40b8ad0569e3edb0539d
+   :alt: Codacy Badge
+   :target: https://www.codacy.com/app/jmcs/ecological?utm_source=github.com&utm_medium=referral&utm_content=jmcs/ecological&utm_campaign=badger
