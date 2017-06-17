@@ -13,6 +13,7 @@ def test_regular_types(monkeypatch):
     monkeypatch.setenv("ANY_STR", "AnyStr Example")
     monkeypatch.setenv("TEXT", "Text Example")
     monkeypatch.setenv("DICT", "{'key': 'value'}")
+    monkeypatch.setenv("LIST", "[1, 2, 3]")
 
     class Configuration(ecological.AutoConfig):
         integer: int
@@ -20,7 +21,8 @@ def test_regular_types(monkeypatch):
         any_str: typing.AnyStr
         default: str = "Default Value"
         text: typing.Text
-        dict: typing.Dict
+        dict: typing.Dict[str, str]
+        list: typing.List[int]
 
     assert Configuration.integer == 42
     assert Configuration.boolean is False
@@ -28,6 +30,7 @@ def test_regular_types(monkeypatch):
     assert Configuration.default == "Default Value"
     assert Configuration.text == "Text Example"
     assert Configuration.dict == {'key': 'value'}
+    assert Configuration.list == [1, 2, 3]
 
 
 def test_nested(monkeypatch):
