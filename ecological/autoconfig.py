@@ -41,8 +41,17 @@ def cast(representation: str, wanted_type: type):
     # If it's a typing meta replace it with the real type
     wanted_type = TYPING_TO_REGULAR_TYPE.get(wanted_type, wanted_type)
     if isinstance(wanted_type, GenericMeta):
-        # Fallback to try to replace typing metas to real types
-        wanted_type = wanted_type.__bases__[0]
+        # Fallback to try to map complex typing types to real types
+        for base in wanted_type.__bases__:
+            if not isinstance(base, GenericMeta):
+                # If it's not a GenericMeta class then it can be a real type
+                wanted_type = base
+                break
+            elif base in TYPING_TO_REGULAR_TYPE:
+                # The mapped type in bases is most likely the base type for complex types
+                # (for example List[int])
+                wanted_type = TYPING_TO_REGULAR_TYPE[base]
+                break
     if wanted_type in TYPES_THAT_NEED_TO_BE_PARSED:
         value = (ast.literal_eval(representation)
                  if isinstance(representation, str)
