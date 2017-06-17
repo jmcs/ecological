@@ -89,7 +89,7 @@ Transformation function
 .......................
 
 The transformation function receive two parameters, a string ``representation`` with the raw value, and a
-``wanted_type`` with the value of the annotation (usually, but not mandatorily a ``type``).
+``wanted_type`` with the value of the annotation (usually, but not necessarily a ``type``).
 
 Nested Configuration
 --------------------

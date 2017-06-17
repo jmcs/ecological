@@ -8,9 +8,12 @@ from setuptools import setup, find_packages
 
 VERSION_MAJOR = 1
 VERSION_MINOR = 2
-VERSION = f'{VERSION_MAJOR}.{VERSION_MINOR}'
+REVISION = 1
+VERSION = f'{VERSION_MAJOR}.{VERSION_MINOR}.{REVISION}'
 
-python_version_major, python_version_minor = (int(version) for version in platform.python_version_tuple()[:-1])
+python_version_major, python_version_minor = (int(version)
+                                              for version
+                                              in platform.python_version_tuple()[:-1])
 
 if (python_version_major, python_version_minor) < (3, 6):
     print("Ecological doesn't support Python <= 3.6")
