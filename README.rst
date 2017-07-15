@@ -62,16 +62,6 @@ You can also decide to prefix your application configuration, for example, to av
 
 In this case the ``home`` property will be fetched from the ``MYAPP_HOME`` environment property.
 
-
-Caveats and Known Limitations
-=============================
-
-- ``Ecological`` doesn't support (public) methods in ``AutoConfig`` classes
-
-
-Advanced Usage
-==============
-
 Fine-grained control
 --------------------
 You can control how the configuration properties are set by providing a ``ecological.Variable`` instance as the default
@@ -95,7 +85,6 @@ Nested Configuration
 --------------------
 ``Ecological.AutoConfig`` also supports nested configurations, for example:
 
-
 .. code-block:: python
 
 
@@ -106,6 +95,16 @@ Nested Configuration
             boolean: bool
 
 This way you can group related configuration properties hierarchically.
+
+Tutorial
+========
+The `tutorial <tutorial.ipynb>`_ includes real examples of all the available
+features.
+
+Caveats and Known Limitations
+=============================
+
+- ``Ecological`` doesn't support (public) methods in ``AutoConfig`` classes
 
 .. _PEP484: https://www.python.org/dev/peps/pep-0484/
 .. _PEP526: https://www.python.org/dev/peps/pep-0526/
