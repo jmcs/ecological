@@ -26,7 +26,7 @@ setup(
     version=VERSION,
     description='Map a python configuration from environment variables',
     long_description=open('README.rst').read(),
-    author='Zalando SE',
+    author='João Santos',
     url='https://github.com/jmcs/ecological',
     license='MIT License',
     classifiers=[
