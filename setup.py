@@ -7,7 +7,7 @@ import sys
 from setuptools import setup, find_packages
 
 VERSION_MAJOR = 1
-VERSION_MINOR = 3
+VERSION_MINOR = 4
 REVISION = 0
 VERSION = f'{VERSION_MAJOR}.{VERSION_MINOR}.{REVISION}'
 
