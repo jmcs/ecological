@@ -1,5 +1,5 @@
 from typing import (AnyStr, ByteString, Callable, Dict, FrozenSet, GenericMeta, List, Optional, Set,
-                    Tuple, Any, TypeVar, Union)
+                    Tuple, Any, TypeVar, Union, get_type_hints)
 
 import os
 
@@ -133,7 +133,8 @@ class ConfigMeta(type):
           "{prefix}_{attribute_name}" as the environment variable name and the attribute value
           (the default value or ``_NO_DEFAULT``) and do the same process as the previous point.
         """
-        annotations: Dict[str, type] = attribute_dict.get('__annotations__', {})
+        config_class = type.__new__(mcs, class_name, super_classes, attribute_dict)
+        annotations: Dict[str, type] = get_type_hints(config_class)
 
         # Add attributes without defaults to the the attribute dict
         attribute_dict.update({attribute_name: _NO_DEFAULT
@@ -148,7 +149,7 @@ class ConfigMeta(type):
                 attribute = default_value
             elif isinstance(default_value, ConfigMeta):
                 # passthrough for nested configs
-                attribute_dict[attribute_name] = default_value
+                setattr(config_class, attribute_name, default_value)
                 continue
             else:
                 if prefix:
@@ -160,10 +161,9 @@ class ConfigMeta(type):
             attribute_type = annotations.get(attribute_name,
                                              str)  # by default attributes are strings
             value = attribute.get(attribute_type)
-            attribute_dict[attribute_name] = value
+            setattr(config_class, attribute_name, value)
 
-        # noinspection PyTypeChecker
-        return type.__new__(mcs, class_name, super_classes, attribute_dict)
+        return config_class
 
 
 class AutoConfig(metaclass=ConfigMeta):
