@@ -3,8 +3,10 @@ from typing import (AnyStr, ByteString, Callable, Dict, FrozenSet, List, Optiona
 
 try:
     from typing import GenericMeta
+    PEP560 = False
 except ImportError:
     GenericMeta = None
+    PEP560 = True
 
 import os
 
@@ -36,6 +38,40 @@ TYPING_TO_REGULAR_TYPE = {
 WantedType = TypeVar('WantedType')
 
 
+def _cast_typing_old(wanted_type: type) -> type:
+    """
+    Casts typing types in Python < 3.7
+    """
+    wanted_type = TYPING_TO_REGULAR_TYPE.get(wanted_type, wanted_type)
+    if isinstance(wanted_type, GenericMeta):
+        # Fallback to try to map complex typing types to real types
+        for base in wanted_type.__bases__:
+            #if not isinstance(base, Generic):
+            #    # If it's not a Generic class then it can be a real type
+            #    wanted_type = base
+            #    break
+            if base in TYPING_TO_REGULAR_TYPE:
+                # The mapped type in bases is most likely the base type for complex types
+                # (for example List[int])
+                wanted_type = TYPING_TO_REGULAR_TYPE[base]
+                break
+    return wanted_type
+
+def _cast_typing_pep560(wanted_type: type) -> type:
+    """
+    Casts typing types in Python >= 3.7
+    See https://www.python.org/dev/peps/pep-0560/
+    """
+    # If it's in the dict in Python >= 3.7 we know how to handle it
+    if wanted_type in TYPING_TO_REGULAR_TYPE:
+        return TYPING_TO_REGULAR_TYPE.get(wanted_type, wanted_type)
+
+    try:
+        return wanted_type.__origin__
+    except AttributeError:  # This means it's (probably) not a typing type
+        return wanted_type
+
+
 def cast(representation: str, wanted_type: type):
     """
     Casts the string ``representation`` to the ``wanted type``.
@@ -44,39 +80,11 @@ def cast(representation: str, wanted_type: type):
     Some types, like ``bool`` and ``list``, need to be parsed with ast.
     """
     # If it's a typing meta replace it with the real type
-    if GenericMeta:  # python < 3.7
-        wanted_type = TYPING_TO_REGULAR_TYPE.get(wanted_type, wanted_type)
-        if isinstance(wanted_type, GenericMeta):
-            # Fallback to try to map complex typing types to real types
-            for base in wanted_type.__bases__:
-                #if not isinstance(base, Generic):
-                #    # If it's not a Generic class then it can be a real type
-                #    wanted_type = base
-                #    break
-                if base in TYPING_TO_REGULAR_TYPE:
-                    # The mapped type in bases is most likely the base type for complex types
-                    # (for example List[int])
-                    wanted_type = TYPING_TO_REGULAR_TYPE[base]
-                    break
-    elif wanted_type in TYPING_TO_REGULAR_TYPE:  # We know how to handle this in Python > 3.7
-        wanted_type = TYPING_TO_REGULAR_TYPE.get(wanted_type, wanted_type)
+    if PEP560:  # python < 3.7
+        wanted_type = _cast_typing_old(wanted_type)
     else:
-        try:
-            print(wanted_type, dir(wanted_type))
-            wanted_type = wanted_type.__origin__
-            # Fallback to try to map complex typing types to real types
-            for base in wanted_type.__args__:
-                #if not isinstance(base, Generic):
-                #    # If it's not a Generic class then it can be a real type
-                #    wanted_type = base
-                #    break
-                if base in TYPING_TO_REGULAR_TYPE:
-                    # The mapped type in bases is most likely the base type for complex types
-                    # (for example List[int])
-                    wanted_type = TYPING_TO_REGULAR_TYPE[base]
-                    break
-        except AttributeError:
-            pass
+        wanted_type = _cast_typing_pep560(wanted_type)
+
     if wanted_type in TYPES_THAT_NEED_TO_BE_PARSED:
         value = (ast.literal_eval(representation)
                  if isinstance(representation, str)
