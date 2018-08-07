@@ -1,5 +1,10 @@
-from typing import (AnyStr, ByteString, Callable, Dict, FrozenSet, GenericMeta, List, Optional, Set,
+from typing import (AnyStr, ByteString, Callable, Dict, FrozenSet, List, Optional, Set,
                     Tuple, Any, TypeVar, Union, get_type_hints)
+
+try:
+    from typing import GenericMeta
+except ImportError:
+    GenericMeta = None
 
 import os
 
@@ -39,19 +44,39 @@ def cast(representation: str, wanted_type: type):
     Some types, like ``bool`` and ``list``, need to be parsed with ast.
     """
     # If it's a typing meta replace it with the real type
-    wanted_type = TYPING_TO_REGULAR_TYPE.get(wanted_type, wanted_type)
-    if isinstance(wanted_type, GenericMeta):
-        # Fallback to try to map complex typing types to real types
-        for base in wanted_type.__bases__:
-            if not isinstance(base, GenericMeta):
-                # If it's not a GenericMeta class then it can be a real type
-                wanted_type = base
-                break
-            elif base in TYPING_TO_REGULAR_TYPE:
-                # The mapped type in bases is most likely the base type for complex types
-                # (for example List[int])
-                wanted_type = TYPING_TO_REGULAR_TYPE[base]
-                break
+    if GenericMeta:  # python < 3.7
+        wanted_type = TYPING_TO_REGULAR_TYPE.get(wanted_type, wanted_type)
+        if isinstance(wanted_type, GenericMeta):
+            # Fallback to try to map complex typing types to real types
+            for base in wanted_type.__bases__:
+                #if not isinstance(base, Generic):
+                #    # If it's not a Generic class then it can be a real type
+                #    wanted_type = base
+                #    break
+                if base in TYPING_TO_REGULAR_TYPE:
+                    # The mapped type in bases is most likely the base type for complex types
+                    # (for example List[int])
+                    wanted_type = TYPING_TO_REGULAR_TYPE[base]
+                    break
+    elif wanted_type in TYPING_TO_REGULAR_TYPE:  # We know how to handle this in Python > 3.7
+        wanted_type = TYPING_TO_REGULAR_TYPE.get(wanted_type, wanted_type)
+    else:
+        try:
+            print(wanted_type, dir(wanted_type))
+            wanted_type = wanted_type.__origin__
+            # Fallback to try to map complex typing types to real types
+            for base in wanted_type.__args__:
+                #if not isinstance(base, Generic):
+                #    # If it's not a Generic class then it can be a real type
+                #    wanted_type = base
+                #    break
+                if base in TYPING_TO_REGULAR_TYPE:
+                    # The mapped type in bases is most likely the base type for complex types
+                    # (for example List[int])
+                    wanted_type = TYPING_TO_REGULAR_TYPE[base]
+                    break
+        except AttributeError:
+            pass
     if wanted_type in TYPES_THAT_NEED_TO_BE_PARSED:
         value = (ast.literal_eval(representation)
                  if isinstance(representation, str)
