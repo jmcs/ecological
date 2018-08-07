@@ -1,0 +1,7 @@
+Pipfile.lock
+.tox
+.coverage
+coverage.xml
+tox.ini
+*.egg-info
+**/__pycache__
