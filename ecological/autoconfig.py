@@ -79,11 +79,11 @@ def cast(representation: str, wanted_type: type):
 
     Some types, like ``bool`` and ``list``, need to be parsed with ast.
     """
-    # If it's a typing meta replace it with the real type
-    if PEP560:  # python < 3.7
-        wanted_type = _cast_typing_old(wanted_type)
-    else:
+    # If it's a typing type replace it with the real type
+    if PEP560:  # python > 3.7
         wanted_type = _cast_typing_pep560(wanted_type)
+    else:
+        wanted_type = _cast_typing_old(wanted_type)
 
     if wanted_type in TYPES_THAT_NEED_TO_BE_PARSED:
         value = (ast.literal_eval(representation)
