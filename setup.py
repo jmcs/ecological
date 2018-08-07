@@ -7,7 +7,7 @@ import sys
 from setuptools import setup, find_packages
 
 VERSION_MAJOR = 1
-VERSION_MINOR = 4
+VERSION_MINOR = 5
 REVISION = 0
 VERSION = f'{VERSION_MAJOR}.{VERSION_MINOR}.{REVISION}'
 
@@ -32,6 +32,7 @@ setup(
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
