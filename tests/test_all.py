@@ -77,12 +77,20 @@ def test_prefix(monkeypatch):
     assert Configuration.not_default == "Not Default"
 
 
-def test_invalid_value(monkeypatch):
-    monkeypatch.setenv("INVALID", "Invalid integer")
+def test_invalid_value_regular_type(monkeypatch):
+    monkeypatch.setenv("PARAM_REGULAR_TYPE", "not an integer")
 
     with pytest.raises(ValueError):
         class Configuration(ecological.AutoConfig):
-            invalid: int
+            param_regular_type: int
+
+
+def test_invalid_value_parsed_type(monkeypatch):
+    monkeypatch.setenv("PARAM_PARSED_TYPE", "not a list")
+
+    with pytest.raises(ValueError):
+        class Configuration(ecological.AutoConfig):
+            param_parsed_type: list = ['param_1', 'param_2']
 
 
 def test_no_default():
