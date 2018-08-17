@@ -133,7 +133,7 @@ class Variable:
 
         try:
             value = self.transform(raw_value, wanted_type)
-        except ValueError as e:
+        except (ValueError, SyntaxError) as e:
             raise ValueError(f"Invalid configuration for '{self.name}': {e}.")
 
         return value
