@@ -6,3 +6,4 @@ tox.ini
 *.egg-info
 **/__pycache__
 .pytest_cache/
+.cache/

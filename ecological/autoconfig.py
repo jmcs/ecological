@@ -99,7 +99,7 @@ class Variable:
     Class to handle specific properties
     """
 
-    def __init__(self, variable_name: str, default=_NO_DEFAULT, *,
+    def __init__(self, variable_name: str, default=_NO_DEFAULT, required=True, *,
                  transform: Callable[[str, type], Any] = cast):
         """
         :param variable_name: Environment variable to get
@@ -108,15 +108,19 @@ class Variable:
         """
         self.name = variable_name
         self.default = default
+        self.required = required
         self.transform = transform
 
     def get(self, wanted_type: WantedType) -> Union[WantedType, Any]:
         """
         Gets ``self.variable_name`` from the environment and tries to cast it to ``wanted_type``.
 
-        If ``self.default`` is ``_NO_DEFAULT`` and the env variable is not set this will raise an
-        ``AttributeError``, if the ``self.default`` is set to something else, its value will be
-        returned.
+        If ``self.default`` is ``_NO_DEFAULT`` and ``self.require`` is `True` and the env variable
+        is not set this will raise an ``AttributeError``, if the ``self.default`` is set to
+        something else, its value will be returned.
+
+        If ``self.default`` is ``_NO_DEFAULT`` and ``self.require`` is `True` and the env variable
+        is not set this will return ``None``.
 
         If casting fails, this function will raise a ``ValueError``.
 
@@ -126,8 +130,10 @@ class Variable:
         try:
             raw_value = os.environ[self.name]
         except KeyError:
-            if self.default is _NO_DEFAULT:
-                raise AttributeError(f"Configuration error: '{self.name}' is not set.")
+            if self.default is _NO_DEFAULT and self.required:
+                raise AttributeError(f"Configuration error: '{self.name}' is not set in environment.")
+            elif self.default is _NO_DEFAULT:
+                return None
             else:
                 return self.default
 
