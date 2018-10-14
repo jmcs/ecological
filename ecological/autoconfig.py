@@ -108,7 +108,7 @@ class Variable:
         """
         self.name = variable_name
         self.default = default
-        self.required= required
+        self.required = required
         self.transform = transform
 
     def get(self, wanted_type: WantedType) -> Union[WantedType, Any]:
