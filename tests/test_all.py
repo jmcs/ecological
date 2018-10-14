@@ -98,3 +98,10 @@ def test_no_default():
         class Configuration(ecological.AutoConfig):
             no_default: int
             bool_var: bool = False
+
+
+def test_no_default_not_required():
+    class Configuration(ecological.AutoConfig):
+        not_set_no_default: int = ecological.Variable("NOT_SET", required=False)
+
+    assert Configuration.not_set_no_default is None
