@@ -98,3 +98,14 @@ def test_no_default():
         class Configuration(ecological.AutoConfig):
             no_default: int
             bool_var: bool = False
+
+
+def test_simple_newtype(monkeypatch):
+    monkeypatch.setenv("INTEGER", "2")
+
+    Integer = typing.NewType("Integer", int)
+
+    class Configuration(ecological.AutoConfig):
+        integer: Integer
+
+    assert Configuration.integer == 2
