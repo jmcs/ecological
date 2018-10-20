@@ -121,3 +121,30 @@ def test_nested_newtype(monkeypatch):
         id: Id
 
     assert Configuration.id == 2
+
+
+def test_parametric_newtype(monkeypatch):
+    monkeypatch.setenv("INTEGERS", "[1, 2, 3]")
+
+    ListOfIntegers = typing.NewType("ListOfIntegers", typing.List[int])
+
+    class Configuration(ecological.AutoConfig):
+        integers: ListOfIntegers
+
+    assert Configuration.integers == [1, 2, 3]
+
+
+def test_parametric_newtype_with_newtype_parameter(monkeypatch):
+    monkeypatch.setenv("MEMBER_IDS", "[1, 2, 3]")
+
+    Integer = typing.NewType("Integer", int)
+    Id = typing.NewType("Id", Integer)
+
+    ListOfIds = typing.NewType("ListOfIds", typing.List[Id])
+
+    MemberIds = typing.NewType("MemberIds", ListOfIds)
+
+    class Configuration(ecological.AutoConfig):
+        member_ids: MemberIds
+
+    assert Configuration.member_ids == [1, 2, 3]
