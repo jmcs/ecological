@@ -109,3 +109,15 @@ def test_simple_newtype(monkeypatch):
         integer: Integer
 
     assert Configuration.integer == 2
+
+
+def test_nested_newtype(monkeypatch):
+    monkeypatch.setenv("ID", "2")
+
+    Integer = typing.NewType("Integer", int)
+    Id = typing.NewType("Id", Integer)
+
+    class Configuration(ecological.AutoConfig):
+        id: Id
+
+    assert Configuration.id == 2
