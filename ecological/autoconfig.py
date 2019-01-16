@@ -79,7 +79,13 @@ def cast(representation: str, wanted_type: type):
 
     Some types, like ``bool`` and ``list``, need to be parsed with ast.
     """
-    # If it's a typing type replace it with the real type
+    # The only distinguishing feature of NewType (both before and after PEP560)
+    # is its __supertype__ field, which it is the only "typing" member to have.
+    # Since newtypes can be nested, we process __supertype__ as long as available.
+    while hasattr(wanted_type, '__supertype__'):
+        wanted_type = wanted_type.__supertype__
+
+    # If it's another typing type replace it with the real type
     if PEP560:  # python >= 3.7
         wanted_type = _cast_typing_pep560(wanted_type)
     else:
