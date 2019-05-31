@@ -1,8 +1,22 @@
 import ast
 import collections
 import os
-from typing import (Any, AnyStr, ByteString, Callable, Dict, FrozenSet, List,
-                    Optional, Set, Tuple, TypeVar, Union, get_type_hints)
+from typing import (
+    Any,
+    AnyStr,
+    ByteString,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    get_type_hints,
+)
 
 try:
     from typing import GenericMeta
@@ -150,6 +164,42 @@ class Variable:
             raise ValueError(f"Invalid configuration for '{self.name}': {e}.")
 
         return value
+
+
+def set_config_values(spec_cls: Type, target_obj=None):
+    annotations: Dict[str, type] = get_type_hints(spec_cls)
+
+    # Add attributes without defaults to the the attribute dict
+    attribute_dict.update(
+        {
+            attribute_name: _NO_DEFAULT
+            for attribute_name in annotations.keys()
+            if attribute_name not in attribute_dict
+        }
+    )
+
+    for attribute_name, default_value in attribute_dict.items():
+        if attribute_name.startswith("_"):
+            # private attributes are not changed
+            continue
+        if isinstance(default_value, Variable):
+            attribute = default_value
+        elif isinstance(default_value, ConfigMeta):
+            # passthrough for nested configs
+            setattr(spec_cls, attribute_name, default_value)
+            continue
+        else:
+            if prefix:
+                env_variable_name = f"{prefix}_{attribute_name}".upper()
+            else:
+                env_variable_name = attribute_name.upper()
+            attribute = Variable(env_variable_name, default_value)
+
+        attribute_type = annotations.get(
+            attribute_name, str
+        )  # by default attributes are strings
+        value = attribute.get(attribute_type)
+        setattr(target_obj, attribute_name, value)
 
 
 class ConfigMeta(type):
