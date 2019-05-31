@@ -1,18 +1,17 @@
-from typing import (AnyStr, ByteString, Callable, Dict, FrozenSet, List, Optional, Set,
-                    Tuple, Any, TypeVar, Union, get_type_hints)
+import ast
+import collections
+import os
+from typing import (Any, AnyStr, ByteString, Callable, Dict, FrozenSet, List,
+                    Optional, Set, Tuple, TypeVar, Union, get_type_hints)
 
 try:
     from typing import GenericMeta
+
     PEP560 = False
 except ImportError:
     GenericMeta = None
     PEP560 = True
 
-import os
-
-import ast
-
-import collections
 
 _NOT_IMPORTED = object()
 
@@ -32,10 +31,10 @@ TYPING_TO_REGULAR_TYPE = {
     FrozenSet: frozenset,
     List: list,
     Set: set,
-    Tuple: tuple
+    Tuple: tuple,
 }
 
-WantedType = TypeVar('WantedType')
+WantedType = TypeVar("WantedType")
 
 
 def _cast_typing_old(wanted_type: type) -> type:
@@ -46,7 +45,7 @@ def _cast_typing_old(wanted_type: type) -> type:
     if isinstance(wanted_type, GenericMeta):
         # Fallback to try to map complex typing types to real types
         for base in wanted_type.__bases__:
-            #if not isinstance(base, Generic):
+            # if not isinstance(base, Generic):
             #    # If it's not a Generic class then it can be a real type
             #    wanted_type = base
             #    break
@@ -56,6 +55,7 @@ def _cast_typing_old(wanted_type: type) -> type:
                 wanted_type = TYPING_TO_REGULAR_TYPE[base]
                 break
     return wanted_type
+
 
 def _cast_typing_pep560(wanted_type: type) -> type:
     """
@@ -82,7 +82,7 @@ def cast(representation: str, wanted_type: type):
     # The only distinguishing feature of NewType (both before and after PEP560)
     # is its __supertype__ field, which it is the only "typing" member to have.
     # Since newtypes can be nested, we process __supertype__ as long as available.
-    while hasattr(wanted_type, '__supertype__'):
+    while hasattr(wanted_type, "__supertype__"):
         wanted_type = wanted_type.__supertype__
 
     # If it's another typing type replace it with the real type
@@ -92,9 +92,11 @@ def cast(representation: str, wanted_type: type):
         wanted_type = _cast_typing_old(wanted_type)
 
     if wanted_type in TYPES_THAT_NEED_TO_BE_PARSED:
-        value = (ast.literal_eval(representation)
-                 if isinstance(representation, str)
-                 else representation)
+        value = (
+            ast.literal_eval(representation)
+            if isinstance(representation, str)
+            else representation
+        )
         return wanted_type(value)
     else:
         return wanted_type(representation)
@@ -105,8 +107,13 @@ class Variable:
     Class to handle specific properties
     """
 
-    def __init__(self, variable_name: str, default=_NO_DEFAULT, *,
-                 transform: Callable[[str, type], Any] = cast):
+    def __init__(
+        self,
+        variable_name: str,
+        default=_NO_DEFAULT,
+        *,
+        transform: Callable[[str, type], Any] = cast,
+    ):
         """
         :param variable_name: Environment variable to get
         :param default: Default value.
@@ -151,8 +158,13 @@ class ConfigMeta(type):
     """
 
     # noinspection PyInitNewSignature
-    def __new__(mcs, class_name, super_classes, attribute_dict: Dict[str, Any],
-                prefix: Optional[str] = None):
+    def __new__(
+        mcs,
+        class_name,
+        super_classes,
+        attribute_dict: Dict[str, Any],
+        prefix: Optional[str] = None,
+    ):
         """
         The new class' ``attribute_dict`` includes attributes with a default value and some special
         keys like ``__annotations__`` which includes annotations of all attributes, including the
@@ -176,12 +188,16 @@ class ConfigMeta(type):
         annotations: Dict[str, type] = get_type_hints(config_class)
 
         # Add attributes without defaults to the the attribute dict
-        attribute_dict.update({attribute_name: _NO_DEFAULT
-                               for attribute_name in annotations.keys()
-                               if attribute_name not in attribute_dict})
+        attribute_dict.update(
+            {
+                attribute_name: _NO_DEFAULT
+                for attribute_name in annotations.keys()
+                if attribute_name not in attribute_dict
+            }
+        )
 
         for attribute_name, default_value in attribute_dict.items():
-            if attribute_name.startswith('_'):
+            if attribute_name.startswith("_"):
                 # private attributes are not changed
                 continue
             if isinstance(default_value, Variable):
@@ -197,8 +213,9 @@ class ConfigMeta(type):
                     env_variable_name = attribute_name.upper()
                 attribute = Variable(env_variable_name, default_value)
 
-            attribute_type = annotations.get(attribute_name,
-                                             str)  # by default attributes are strings
+            attribute_type = annotations.get(
+                attribute_name, str
+            )  # by default attributes are strings
             value = attribute.get(attribute_type)
             setattr(config_class, attribute_name, value)
 
@@ -231,5 +248,6 @@ class AutoConfig(metaclass=ConfigMeta):
     Further information is available in the ``README.rst``.
 
     """
+
     # TODO Document errors, typing support, prefix
     pass
