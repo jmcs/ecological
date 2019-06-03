@@ -1,5 +1,7 @@
 import ast
 import collections
+import dataclasses
+import enum
 import os
 from typing import (
     Any,
@@ -166,57 +168,78 @@ class Variable:
         return value
 
 
-def set_config_values(spec_cls: Type, target_obj=None):
-    annotations: Dict[str, type] = get_type_hints(spec_cls)
-
-    # Add attributes without defaults to the the attribute dict
-    attribute_dict.update(
-        {
-            attribute_name: _NO_DEFAULT
-            for attribute_name in annotations.keys()
-            if attribute_name not in attribute_dict
-        }
-    )
-
-    for attribute_name, default_value in attribute_dict.items():
-        if attribute_name.startswith("_"):
-            # private attributes are not changed
-            continue
-        if isinstance(default_value, Variable):
-            attribute = default_value
-        elif isinstance(default_value, ConfigMeta):
-            # passthrough for nested configs
-            setattr(spec_cls, attribute_name, default_value)
-            continue
-        else:
-            if prefix:
-                env_variable_name = f"{prefix}_{attribute_name}".upper()
-            else:
-                env_variable_name = attribute_name.upper()
-            attribute = Variable(env_variable_name, default_value)
-
-        attribute_type = annotations.get(
-            attribute_name, str
-        )  # by default attributes are strings
-        value = attribute.get(attribute_type)
-        setattr(target_obj, attribute_name, value)
+class Autoload(enum.Enum):
+    CLS_INIT = "CLS_INIT"
+    OBJ_INIT = "OBJ_INIT"
+    NEVER = "NEVER"
 
 
-class ConfigMeta(type):
+@dataclasses.dataclass
+class Options:
+    prefix: Optional[str] = None
+    autoload: Autoload = Autoload.CLS_INIT
+
+    @classmethod
+    def from_metaclass_kwargs(cls, metaclass_kwargs: Dict) -> "Options":
+        options_kwargs = {}
+        for field in dataclasses.fields(cls):
+            value = metaclass_kwargs.pop(field.name, None)
+            if value is None:
+                continue
+
+            options_kwargs[field.name] = value
+
+        try:
+            return cls(**options_kwargs)
+        except AttributeError as e:
+            raise ValueError(f"Invalid config: {e}")
+
+
+class Config:
     """
-    Metaclass that does the "magic" behind ``AutoConfig``.
+    When ``Config`` sub classes are created ``Ecological`` will automatically set it's
+    attributes based on the environment variables.
+
+    For example if ``DEBUG`` is set to ``"True"`` and ``PORT`` is set to ``"8080"`` and your
+    configuration class looks like::
+
+        class Configuration(ecological.AutoConfig):
+            port: int
+            debug: bool
+
+    ``Configuration.port`` will be ``8080`` and ``Configuration.debug`` will be ``True``, with the
+    correct types.
+
+    Caveats and Known Limitations
+    =============================
+
+    - ``Ecological`` doesn't support (public) methods in ``Config`` classes.
+
+    Further Information
+    ===================
+
+    Further information is available in the ``README.rst``.
+
     """
 
-    # noinspection PyInitNewSignature
-    def __new__(
-        mcs,
-        class_name,
-        super_classes,
-        attribute_dict: Dict[str, Any],
-        prefix: Optional[str] = None,
-    ):
+    _options: Options
+
+    def __init_subclass__(cls, **kwargs):
+        cls._options = Options.from_metaclass_kwargs(kwargs)
+        super().__init_subclass__(**kwargs)
+        if cls._options.autoload is Autoload.CLS_INIT:
+            cls.load(cls)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        cls = type(self)
+        if cls._options.autoload is Autoload.OBJ_INIT:
+            cls.load(self)
+
+    @classmethod
+    def load(cls: "Config", target_obj: Optional[object] = None):
         """
-        The new class' ``attribute_dict`` includes attributes with a default value and some special
+        The class' ``attribute_dict`` includes attributes with a default value and some special
         keys like ``__annotations__`` which includes annotations of all attributes, including the
         ones that don't have a value.
 
@@ -227,15 +250,17 @@ class ConfigMeta(type):
         of three things:
 
         - If the attribute value is an instance of ``ConfigMeta`` it is kept as is to allow nested
-          configuration.
+            configuration.
         - If the attribute value is of type ``Variable``, ``ConfigMeta`` will class its ``get``
-          method with the attribute's annotation type as the only parameter
+            method with the attribute's annotation type as the only parameter
         - Otherwise, ``ConfigMeta`` will create a ``Variable`` instance, with
-          "{prefix}_{attribute_name}" as the environment variable name and the attribute value
-          (the default value or ``_NO_DEFAULT``) and do the same process as the previous point.
+            "{prefix}_{attribute_name}" as the environment variable name and the attribute value
+            (the default value or ``_NO_DEFAULT``) and do the same process as the previous point.
         """
-        config_class = type.__new__(mcs, class_name, super_classes, attribute_dict)
-        annotations: Dict[str, type] = get_type_hints(config_class)
+        target_obj = target_obj or cls
+        annotations: Dict[str, type] = get_type_hints(cls)
+        attribute_dict = vars(cls).copy()
+        prefix = cls._options.prefix
 
         # Add attributes without defaults to the the attribute dict
         attribute_dict.update(
@@ -252,9 +277,9 @@ class ConfigMeta(type):
                 continue
             if isinstance(default_value, Variable):
                 attribute = default_value
-            elif isinstance(default_value, ConfigMeta):
+            elif isinstance(default_value, Config):
                 # passthrough for nested configs
-                setattr(config_class, attribute_name, default_value)
+                setattr(target_obj, attribute_name, default_value)
                 continue
             else:
                 if prefix:
@@ -267,37 +292,8 @@ class ConfigMeta(type):
                 attribute_name, str
             )  # by default attributes are strings
             value = attribute.get(attribute_type)
-            setattr(config_class, attribute_name, value)
-
-        return config_class
+            setattr(target_obj, attribute_name, value)
 
 
-class AutoConfig(metaclass=ConfigMeta):
-    """
-    When ``AutoConfig`` sub classes are created ``Ecological`` will automatically set it's
-    attributes based on the environment variables.
-
-    For example if ``DEBUG`` is set to ``"True"`` and ``PORT`` is set to ``"8080"`` and your
-    configuration class looks like::
-
-        class Configuration(ecological.AutoConfig):
-            port: int
-            debug: bool
-
-    ``Configuration.port`` will be ``8080`` and ``Configuration.debug`` will be ``True``, with the
-    correct types.
-
-    Caveats and Known Limitations
-    =============================
-
-    - ``Ecological`` doesn't support (public) methods in ``AutoConfig`` classes.
-
-    Further Information
-    ===================
-
-    Further information is available in the ``README.rst``.
-
-    """
-
-    # TODO Document errors, typing support, prefix
-    pass
+# For backwards compatibility
+AutoConfig = Config

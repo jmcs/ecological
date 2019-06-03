@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+dataclasses = "*"
 
 [dev-packages]
 tox = "*"
@@ -11,6 +12,7 @@ pylint = "*"
 pytest = "*"
 pytest-cov = "*"
 black = "*"
+rope = "*"
 
 [requires]
 python_version = "3"

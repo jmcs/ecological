@@ -29,7 +29,7 @@ def test_regular_types(monkeypatch):
     assert Configuration.any_str == "AnyStr Example"
     assert Configuration.default == "Default Value"
     assert Configuration.text == "Text Example"
-    assert Configuration.dict == {'key': 'value'}
+    assert Configuration.dict == {"key": "value"}
     assert Configuration.list == [1, 2, 3]
 
 
@@ -40,7 +40,7 @@ def test_nested(monkeypatch):
     class Configuration(ecological.AutoConfig):
         integer: int
 
-        class Nested(ecological.AutoConfig, prefix='nested'):
+        class Nested(ecological.AutoConfig, prefix="nested"):
             boolean: bool
 
     assert Configuration.integer == 42
@@ -81,6 +81,7 @@ def test_invalid_value_regular_type(monkeypatch):
     monkeypatch.setenv("PARAM_REGULAR_TYPE", "not an integer")
 
     with pytest.raises(ValueError):
+
         class Configuration(ecological.AutoConfig):
             param_regular_type: int
 
@@ -89,12 +90,14 @@ def test_invalid_value_parsed_type(monkeypatch):
     monkeypatch.setenv("PARAM_PARSED_TYPE", "not a list")
 
     with pytest.raises(ValueError):
+
         class Configuration(ecological.AutoConfig):
-            param_parsed_type: list = ['param_1', 'param_2']
+            param_parsed_type: list = ["param_1", "param_2"]
 
 
 def test_no_default():
     with pytest.raises(AttributeError):
+
         class Configuration(ecological.AutoConfig):
             no_default: int
             bool_var: bool = False
