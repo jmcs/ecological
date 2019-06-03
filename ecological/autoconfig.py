@@ -3,22 +3,8 @@ import collections
 import dataclasses
 import enum
 import os
-from typing import (
-    Any,
-    AnyStr,
-    ByteString,
-    Callable,
-    Dict,
-    FrozenSet,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    get_type_hints,
-)
+from typing import (Any, AnyStr, ByteString, Callable, Dict, FrozenSet, List,
+                    Optional, Set, Tuple, Type, TypeVar, Union, get_type_hints)
 
 try:
     from typing import GenericMeta
@@ -169,15 +155,15 @@ class Variable:
 
 
 class Autoload(enum.Enum):
-    CLS_INIT = "CLS_INIT"
-    OBJ_INIT = "OBJ_INIT"
+    CLASS = "CLASS"
+    OBJECT = "OBJECT"
     NEVER = "NEVER"
 
 
 @dataclasses.dataclass
 class Options:
     prefix: Optional[str] = None
-    autoload: Autoload = Autoload.CLS_INIT
+    autoload: Autoload = Autoload.CLASS
 
     @classmethod
     def from_metaclass_kwargs(cls, metaclass_kwargs: Dict) -> "Options":
@@ -191,8 +177,10 @@ class Options:
 
         try:
             return cls(**options_kwargs)
-        except AttributeError as e:
-            raise ValueError(f"Invalid config: {e}")
+        except TypeError as e:
+            raise ValueError(
+                f"Invalid options for Config class: {metaclass_kwargs}."
+            ) from e
 
 
 class Config:
@@ -227,13 +215,13 @@ class Config:
     def __init_subclass__(cls, **kwargs):
         cls._options = Options.from_metaclass_kwargs(kwargs)
         super().__init_subclass__(**kwargs)
-        if cls._options.autoload is Autoload.CLS_INIT:
+        if cls._options.autoload is Autoload.CLASS:
             cls.load(cls)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         cls = type(self)
-        if cls._options.autoload is Autoload.OBJ_INIT:
+        if cls._options.autoload is Autoload.OBJECT:
             cls.load(self)
 
     @classmethod

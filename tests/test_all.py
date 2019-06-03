@@ -7,7 +7,12 @@ import pytest
 import ecological
 
 
-def test_regular_types(monkeypatch):
+@pytest.fixture(params=[ecological.AutoConfig, ecological.Config])
+def base_class(request):
+    return request.param
+
+
+def test_regular_types(monkeypatch, base_class):
     monkeypatch.setenv("INTEGER", "42")
     monkeypatch.setenv("BOOLEAN", "False")
     monkeypatch.setenv("ANY_STR", "AnyStr Example")
@@ -15,7 +20,7 @@ def test_regular_types(monkeypatch):
     monkeypatch.setenv("DICT", "{'key': 'value'}")
     monkeypatch.setenv("LIST", "[1, 2, 3]")
 
-    class Configuration(ecological.AutoConfig):
+    class Configuration(base_class):
         integer: int
         boolean: bool
         any_str: typing.AnyStr
@@ -33,11 +38,11 @@ def test_regular_types(monkeypatch):
     assert Configuration.list == [1, 2, 3]
 
 
-def test_nested(monkeypatch):
+def test_nested(monkeypatch, base_class):
     monkeypatch.setenv("INTEGER", "42")
     monkeypatch.setenv("NESTED_BOOLEAN", "False")
 
-    class Configuration(ecological.AutoConfig):
+    class Configuration(base_class):
         integer: int
 
         class Nested(ecological.AutoConfig, prefix="nested"):
@@ -47,10 +52,10 @@ def test_nested(monkeypatch):
     assert Configuration.Nested.boolean is False
 
 
-def test_explicit_variable(monkeypatch):
+def test_explicit_variable(monkeypatch, base_class):
     monkeypatch.setenv("TEST_Integer", "42")
 
-    class Configuration(ecological.AutoConfig, prefix="this_is_going_to_be_ignored"):
+    class Configuration(base_class, prefix="this_is_going_to_be_ignored"):
         var1a = ecological.Variable("TEST_Integer", transform=lambda v, wt: int(v))
         var1b: str = ecological.Variable("TEST_Integer", transform=lambda v, wt: v * 2)
         var2: bool = ecological.Variable("404", default=False)
@@ -60,12 +65,12 @@ def test_explicit_variable(monkeypatch):
     assert Configuration.var2 is False
 
 
-def test_prefix(monkeypatch):
+def test_prefix(monkeypatch, base_class):
     monkeypatch.setenv("PREFIX_INTEGER", "42")
     monkeypatch.setenv("PREFIX_BOOLEAN", "False")
     monkeypatch.setenv("PREFIX_NOT_DEFAULT", "Not Default")
 
-    class Configuration(ecological.AutoConfig, prefix="prefix"):
+    class Configuration(base_class, prefix="prefix"):
         integer: int
         boolean: bool
         default: str = "Default"
@@ -77,67 +82,67 @@ def test_prefix(monkeypatch):
     assert Configuration.not_default == "Not Default"
 
 
-def test_invalid_value_regular_type(monkeypatch):
+def test_invalid_value_regular_type(monkeypatch, base_class):
     monkeypatch.setenv("PARAM_REGULAR_TYPE", "not an integer")
 
     with pytest.raises(ValueError):
 
-        class Configuration(ecological.AutoConfig):
+        class Configuration(base_class):
             param_regular_type: int
 
 
-def test_invalid_value_parsed_type(monkeypatch):
+def test_invalid_value_parsed_type(monkeypatch, base_class):
     monkeypatch.setenv("PARAM_PARSED_TYPE", "not a list")
 
     with pytest.raises(ValueError):
 
-        class Configuration(ecological.AutoConfig):
+        class Configuration(base_class):
             param_parsed_type: list = ["param_1", "param_2"]
 
 
-def test_no_default():
+def test_no_default(base_class):
     with pytest.raises(AttributeError):
 
-        class Configuration(ecological.AutoConfig):
+        class Configuration(base_class):
             no_default: int
             bool_var: bool = False
 
 
-def test_simple_newtype(monkeypatch):
+def test_simple_newtype(monkeypatch, base_class):
     monkeypatch.setenv("INTEGER", "2")
 
     Integer = typing.NewType("Integer", int)
 
-    class Configuration(ecological.AutoConfig):
+    class Configuration(base_class):
         integer: Integer
 
     assert Configuration.integer == 2
 
 
-def test_nested_newtype(monkeypatch):
+def test_nested_newtype(monkeypatch, base_class):
     monkeypatch.setenv("ID", "2")
 
     Integer = typing.NewType("Integer", int)
     Id = typing.NewType("Id", Integer)
 
-    class Configuration(ecological.AutoConfig):
+    class Configuration(base_class):
         id: Id
 
     assert Configuration.id == 2
 
 
-def test_parametric_newtype(monkeypatch):
+def test_parametric_newtype(monkeypatch, base_class):
     monkeypatch.setenv("INTEGERS", "[1, 2, 3]")
 
     ListOfIntegers = typing.NewType("ListOfIntegers", typing.List[int])
 
-    class Configuration(ecological.AutoConfig):
+    class Configuration(base_class):
         integers: ListOfIntegers
 
     assert Configuration.integers == [1, 2, 3]
 
 
-def test_parametric_newtype_with_newtype_parameter(monkeypatch):
+def test_parametric_newtype_with_newtype_parameter(monkeypatch, base_class):
     monkeypatch.setenv("MEMBER_IDS", "[1, 2, 3]")
 
     Integer = typing.NewType("Integer", int)
@@ -147,7 +152,33 @@ def test_parametric_newtype_with_newtype_parameter(monkeypatch):
 
     MemberIds = typing.NewType("MemberIds", ListOfIds)
 
-    class Configuration(ecological.AutoConfig):
+    class Configuration(base_class):
         member_ids: MemberIds
 
     assert Configuration.member_ids == [1, 2, 3]
+
+
+def test_autoload_values_on_object_init(monkeypatch):
+    class Configuration(ecological.Config, autoload=ecological.Autoload.OBJECT):
+        a: str
+        b: int = 2
+
+    monkeypatch.setenv("A", "a")
+    monkeypatch.setenv("B", "3")
+    config = Configuration()
+
+    assert config.a == "a"
+    assert config.b == 3
+
+
+def test_load_values_explictly(monkeypatch):
+    class Configuration(ecological.Config, autoload=ecological.Autoload.NEVER):
+        a: str
+        b: bool = False
+
+    monkeypatch.setenv("A", "a")
+    monkeypatch.setenv("B", "True")
+    Configuration.load()
+
+    assert Configuration.a == "a"
+    assert Configuration.b is True
