@@ -161,7 +161,7 @@ class Autoload(enum.Enum):
 
 
 @dataclasses.dataclass
-class Options:
+class _Options:
     prefix: Optional[str] = None
     autoload: Autoload = Autoload.CLASS
 
@@ -210,10 +210,10 @@ class Config:
 
     """
 
-    _options: Options
+    _options: _Options
 
     def __init_subclass__(cls, **kwargs):
-        cls._options = Options.from_metaclass_kwargs(kwargs)
+        cls._options = _Options.from_metaclass_kwargs(kwargs)
         super().__init_subclass__(**kwargs)
         if cls._options.autoload is Autoload.CLASS:
             cls.load(cls)
