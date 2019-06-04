@@ -7,7 +7,12 @@ import pytest
 import ecological
 
 
-@pytest.fixture(params=[ecological.AutoConfig, ecological.Config])
+@pytest.fixture(
+    params=[
+        pytest.param(ecological.AutoConfig, id="AutoConfig"),
+        pytest.param(ecological.Config, id="Config"),
+    ]
+)
 def base_class(request):
     return request.param
 
