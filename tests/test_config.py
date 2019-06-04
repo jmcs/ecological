@@ -6,6 +6,8 @@ import pytest
 
 import ecological
 
+pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
+
 
 @pytest.fixture(
     params=[
@@ -187,3 +189,17 @@ def test_load_values_explictly(monkeypatch):
 
     assert Configuration.a == "a"
     assert Configuration.b is True
+
+
+def test_deprecation_warning_is_emitted_on_autoconfig():
+    with pytest.warns(DeprecationWarning):
+
+        class Configuration(ecological.AutoConfig):
+            pass
+
+
+def test_config_autoload_is_ignored_on_autoconfig():
+    with pytest.raises(AttributeError):
+
+        class Configuration(ecological.AutoConfig, autoload=ecological.Autoload.NEVER):
+            my_var1: str

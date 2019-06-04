@@ -3,8 +3,23 @@ import collections
 import dataclasses
 import enum
 import os
-from typing import (Any, AnyStr, ByteString, Callable, Dict, FrozenSet, List,
-                    Optional, Set, Tuple, Type, TypeVar, Union, get_type_hints)
+import warnings
+from typing import (
+    Any,
+    AnyStr,
+    ByteString,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    get_type_hints,
+)
 
 try:
     from typing import GenericMeta
@@ -283,5 +298,11 @@ class Config:
             setattr(target_obj, attribute_name, value)
 
 
-# For backwards compatibility
-AutoConfig = Config
+# DEPRECATED: For backward compatibility purposes only
+class AutoConfig(Config, autoload=Autoload.NEVER):
+    def __init_subclass__(cls, prefix: Optional[str] = None, **kwargs):
+        warnings.warn(
+            "ecological.AutoConfig is deprecated, please use ecological.Config instead.",
+            DeprecationWarning,
+        )
+        super().__init_subclass__(prefix=prefix, autoload=Autoload.CLASS)
