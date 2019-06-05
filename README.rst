@@ -24,7 +24,7 @@ Level, that is ``INFO`` by default, you could simply declare your configuration 
 
 .. code-block:: python
 
-    class Configuration(ecological.AutoConfig):
+    class Configuration(ecological.Config):
         port: int
         debug: bool
         log_level: str = "INFO"
@@ -32,8 +32,54 @@ Level, that is ``INFO`` by default, you could simply declare your configuration 
 And then set the environment variables ``PORT``, ``DEBUG`` and ``LOG_LEVEL``. ``Ecological`` will automatically set the
 class properties from the environment variables with the same (but upper cased) name.
 
-The values are set at the class definition type and assigned to the class itself (i.e. the class doesn't need to be
-instantiated).
+By default the values are set at the class definition type and assigned to the class itself (i.e. the class doesn't need to be
+instantiated). If needed this behavior can be changed (see the next section).
+
+Autoloading
+=============
+It is possible to defer/disable autoloading (setting) of variable values by specifyfing ``autoload`` option on class definition.
+
+On class creation (default)
+---------------------------
+When no option is provided values are loaded immediately on class creation and assigned to class attributes:
+
+.. code-block:: python
+
+    class Configuration(ecological.Config, autoload=ecological.Autoload.CLASS):
+        port: int
+    # Values already read and set at this point.
+    # assert Configuration.port == <value-of-PORT-env-var>
+
+Never
+------
+When this option is chosen, no autoloading happens. In order to set variable values ``Config.load`` method needs to be called explicitly:
+
+.. code-block:: python
+
+    class Configuration(ecological.Config, autoload=ecological.Autoload.CLASS):
+        port: int
+    # Values not set at this point.
+    # Accessing Configuration.port would throw AttributeError.
+
+    Configuration.load()
+    # Values read and set at this point.
+    # assert Configuration.port == <value-of-PORT-env-var>
+
+On object instance initialization
+----------------------------------
+If it is preferred to load and store attribute values on the object instance instead class itself, ``Autoload.OBJECT`` strategy can be used:
+
+.. code-block:: python
+
+    class Configuration(ecological.Config, autoload=ecological.Autoload.OBJECT):
+        port: int
+    # Values not set at this point.
+
+    config = Configuration()
+    # Values read and set at this point on ``config``.
+    # assert config.port == <value-of-PORT-env-var>
+    # Accessing ``Configuration.port`` would throw AttributeError.
+
 
 Typing Support
 ==============
@@ -42,7 +88,7 @@ Typing Support
 .. code-block:: python
 
 
-    class Configuration(ecological.AutoConfig):
+    class Configuration(ecological.Config):
         list_of_values: List[str]
 
 Will automatically parse the environment variable value as a list.
@@ -56,7 +102,7 @@ You can also decide to prefix your application configuration, for example, to av
 
 .. code-block:: python
 
-    class Configuration(ecological.AutoConfig, prefix='myapp'):
+    class Configuration(ecological.Config, prefix='myapp'):
         home: str
 
 
@@ -83,15 +129,15 @@ The transformation function receive two parameters, a string ``representation`` 
 
 Nested Configuration
 --------------------
-``Ecological.AutoConfig`` also supports nested configurations, for example:
+``Ecological.Config`` also supports nested configurations, for example:
 
 .. code-block:: python
 
 
-    class Configuration(ecological.AutoConfig):
+    class Configuration(ecological.Config):
         integer: int
 
-        class Nested(ecological.AutoConfig, prefix='nested'):
+        class Nested(ecological.Config, prefix='nested'):
             boolean: bool
 
 This way you can group related configuration properties hierarchically.
@@ -104,7 +150,7 @@ features.
 Caveats and Known Limitations
 =============================
 
-- ``Ecological`` doesn't support (public) methods in ``AutoConfig`` classes
+- ``Ecological`` doesn't support (public) methods in ``Config`` classes
 
 .. _PEP484: https://www.python.org/dev/peps/pep-0484/
 .. _PEP526: https://www.python.org/dev/peps/pep-0526/

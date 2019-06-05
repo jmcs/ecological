@@ -218,28 +218,7 @@ class Config:
     correct types.
 
     It is possible to defer the calculation of attribute values by specyfing ``autoload``
-    keyword argument on your class definition:
-
-        class Configuration(ecological.Config, autoload=ecological.Autoload.NEVER):
-            port: int
-            debug: bool
-        # Values not loaded yet.
-
-        Configuration.load() # Values loaded at this point.
-
-        # ... code that uses Configuration
-
-    If it's preferred to store attribute values on the object instance instead class
-    ``Autoload.OBJECT`` strategy can be used:
-    
-        class Configuration(ecological.Config, autoload=ecological.Autoload.OBJECT):
-            port: int
-            debug: bool
-        # Values not loaded.
-
-        config = Configuration() # Values load here to ``config`` instance.
-
-        assert config.port == 8080
+    keyword argument on your class definition. For possible strategies see ``Autoload`` class definition.
     
     Caveats and Known Limitations
     =============================
