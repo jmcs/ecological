@@ -4,22 +4,8 @@ import dataclasses
 import enum
 import os
 import warnings
-from typing import (
-    Any,
-    AnyStr,
-    ByteString,
-    Callable,
-    Dict,
-    FrozenSet,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    get_type_hints,
-)
+from typing import (Any, AnyStr, ByteString, Callable, Dict, FrozenSet, List,
+                    Optional, Set, Tuple, Type, TypeVar, Union, get_type_hints)
 
 try:
     from typing import GenericMeta
@@ -170,6 +156,15 @@ class Variable:
 
 
 class Autoload(enum.Enum):
+    """
+    Represents different approaches to the attribute values
+    autoloading on ``Config`` class:
+
+    - ``Autoload.CLASS`` - load variable values to class on its subclass creation,
+    - ``Autoload.OBJECT`` - load variable values to object instance on its initialization,
+    - ``Autoload.NEVER`` - does not perform any autoloading; ``Config.load`` method needs to called explicitly.
+    """
+
     CLASS = "CLASS"
     OBJECT = "OBJECT"
     NEVER = "NEVER"
@@ -177,11 +172,20 @@ class Autoload(enum.Enum):
 
 @dataclasses.dataclass
 class _Options:
+    """
+    Acts as a container for metaclass keyword arguments provided during 
+    ``Config`` class creation. 
+    """
+
     prefix: Optional[str] = None
     autoload: Autoload = Autoload.CLASS
 
     @classmethod
     def from_metaclass_kwargs(cls, metaclass_kwargs: Dict) -> "Options":
+        """
+        Produces ``_Options`` instance from given dictionary.
+        Items are deleted from ``metaclass_kwargs`` as a side-effect.
+        """
         options_kwargs = {}
         for field in dataclasses.fields(cls):
             value = metaclass_kwargs.pop(field.name, None)
@@ -200,19 +204,43 @@ class _Options:
 
 class Config:
     """
-    When ``Config`` sub classes are created ``Ecological`` will automatically set it's
-    attributes based on the environment variables.
+    When ``Config`` subclasses are created, by default ``Ecological`` will set their
+    attributes automatically based on the corresponding environment variables.
 
     For example if ``DEBUG`` is set to ``"True"`` and ``PORT`` is set to ``"8080"`` and your
     configuration class looks like::
 
-        class Configuration(ecological.AutoConfig):
+        class Configuration(ecological.Config):
             port: int
             debug: bool
 
     ``Configuration.port`` will be ``8080`` and ``Configuration.debug`` will be ``True``, with the
     correct types.
 
+    It is possible to defer the calculation of attribute values by specyfing ``autoload``
+    keyword argument on your class definition:
+
+        class Configuration(ecological.Config, autoload=ecological.Autoload.NEVER):
+            port: int
+            debug: bool
+        # Values not loaded yet.
+
+        Configuration.load() # Values loaded at this point.
+
+        # ... code that uses Configuration
+
+    If it's preferred to store attribute values on the object instance instead class
+    ``Autoload.OBJECT`` strategy can be used:
+    
+        class Configuration(ecological.Config, autoload=ecological.Autoload.OBJECT):
+            port: int
+            debug: bool
+        # Values not loaded.
+
+        config = Configuration() # Values load here to ``config`` instance.
+
+        assert config.port == 8080
+    
     Caveats and Known Limitations
     =============================
 
@@ -222,7 +250,6 @@ class Config:
     ===================
 
     Further information is available in the ``README.rst``.
-
     """
 
     _options: _Options
@@ -246,19 +273,19 @@ class Config:
         keys like ``__annotations__`` which includes annotations of all attributes, including the
         ones that don't have a value.
 
-        To simplify the class building process ``ConfigMeta`` injects the annotated attributes that
-        don't have a value in the ``attribute_dict`` with a ``_NO_DEFAULT`` sentinel object.
+        To simplify the class building process the annotated attributes that don't have a value
+        in the ``attribute_dict`` are injected with a ``_NO_DEFAULT`` sentinel object.
 
-        After this ``ConfigMeta`` goes through all the public attributes of the class, and does one
-        of three things:
+        After this all the public attributes of the class are iterated over and one
+        of three things is performed:
 
-        - If the attribute value is an instance of ``ConfigMeta`` it is kept as is to allow nested
+        - If the attribute value is an instance of ``Config`` it is kept as is to allow nested
             configuration.
-        - If the attribute value is of type ``Variable``, ``ConfigMeta`` will class its ``get``
+        - If the attribute value is of type ``Variable``, ``Config`` will call its ``get``
             method with the attribute's annotation type as the only parameter
-        - Otherwise, ``ConfigMeta`` will create a ``Variable`` instance, with
+        - Otherwise, ``Config`` will create a ``Variable`` instance, with
             "{prefix}_{attribute_name}" as the environment variable name and the attribute value
-            (the default value or ``_NO_DEFAULT``) and do the same process as the previous point.
+            (the default value or ``_NO_DEFAULT``) and do the same process as in the previous point.
         """
         target_obj = target_obj or cls
         annotations: Dict[str, type] = get_type_hints(cls)
