@@ -30,7 +30,7 @@ pytest-cov = "^2.7"
 black = {version = "^18.3-alpha.0",allows-prereleases = true}
 rope = "^0.14.0"
 flake8 = "^3.7"
-codacy-coverage = {version = "^1.3",extras = ["ci"]}
+codacy-coverage = "^1.3"
 
 [build-system]
 requires = ["poetry>=0.12"]
