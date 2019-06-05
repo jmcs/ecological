@@ -1,11 +1,9 @@
+dist: xenial
 language: python
-python:
-  - "3.6"
-install:
-  - pip install tox tox-travis
-  - pip install codacy-coverage
-script:
-  - tox
+python: ["3.6", "3.7"]
+before_install: pip install poetry
+install: poetry install -E ci
+script: python -m pytest ecological --cov-report term-missing --cov-report xml 
 after_success:
   - python-codacy-coverage -r coverage.xml
 env:
