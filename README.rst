@@ -37,7 +37,7 @@ instantiated). If needed this behavior can be changed (see the next section).
 
 Autoloading
 =============
-It is possible to defer/disable autoloading (setting) of variable values by specifyfing ``autoload`` option on class definition.
+It is possible to defer/disable autoloading (setting) of variable values by specifying the ``autoload`` option on class definition.
 
 On class creation (default)
 ---------------------------
@@ -52,11 +52,11 @@ When no option is provided values are loaded immediately on class creation and a
 
 Never
 ------
-When this option is chosen, no autoloading happens. In order to set variable values ``Config.load`` method needs to be called explicitly:
+When this option is chosen, no autoloading happens. In order to set variable values, the ``Config.load`` method needs to be called explicitly:
 
 .. code-block:: python
 
-    class Configuration(ecological.Config, autoload=ecological.Autoload.CLASS):
+    class Configuration(ecological.Config, autoload=ecological.Autoload.NEVER):
         port: int
     # Values not set at this point.
     # Accessing Configuration.port would throw AttributeError.
@@ -67,7 +67,7 @@ When this option is chosen, no autoloading happens. In order to set variable val
 
 On object instance initialization
 ----------------------------------
-If it is preferred to load and store attribute values on the object instance instead class itself, ``Autoload.OBJECT`` strategy can be used:
+If it is preferred to load and store attribute values on the object instance instead of the class itself, the ``Autoload.OBJECT`` strategy can be used:
 
 .. code-block:: python
 

@@ -217,8 +217,8 @@ class Config:
     ``Configuration.port`` will be ``8080`` and ``Configuration.debug`` will be ``True``, with the
     correct types.
 
-    It is possible to defer the calculation of attribute values by specyfing ``autoload``
-    keyword argument on your class definition. For possible strategies see ``Autoload`` class definition.
+    It is possible to defer the calculation of attribute values by specifying the ``autoload``
+    keyword argument on your class definition. For possible strategies see the ``Autoload`` class definition.
     
     Caveats and Known Limitations
     =============================
