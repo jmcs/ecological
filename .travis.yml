@@ -7,7 +7,7 @@ script: poetry run python -m pytest ecological --cov-report term-missing --cov-r
 after_success:
   - python-codacy-coverage -r coverage.xml
 env:
-  - secure: |-
+  - secure: >-
       ikRwXBf+uwyJ0AqvPcmK5uPVuxPLMT/3wyaVkAnkrMIppXrG3Z9rGaKOOybet+xC2XK/oYkqB
       8KIgOhXc67IRjqeGWbXQhUPjMNc96JJg1iIxfivbYzbJDFryzxvVHJN/fs1MBaCkG+GQM3rLx
       Mc+x2dTxo5f73W+n1DQVdO3hvlXQhBANVKGzDeBeUhmldYjvtk9yhxULH7mXbFty0GX46AiBF
