@@ -1,11 +1,15 @@
 [tool.poetry]
 name = "ecological"
-version = "1.6.0"
+version = "2.0.0"
 description = "Map a Python configuration from environment variables"
-authors = ["João Santos <jmcs@jsantos.eu>", "Marcin Zaremba <mrcn.zrmb@gmail.com>"]
+authors = [
+    "João Santos <jmcs@jsantos.eu>",
+    "Marcin Zaremba <mrcn.zrmb@gmail.com>"
+]
 license = "MIT"
 readme = "README.rst"
 homepage = "https://github.com/jmcs/ecological"
+repository = "https://github.com/jmcs/ecological"
 classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.6",
