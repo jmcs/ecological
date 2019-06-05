@@ -45,7 +45,7 @@ When no option is provided values are loaded immediately on class creation and a
 
 .. code-block:: python
 
-    class Configuration(ecological.Config, autoload=ecological.Autoload.CLASS):
+    class Configuration(ecological.Config):
         port: int
     # Values already read and set at this point.
     # assert Configuration.port == <value-of-PORT-env-var>
