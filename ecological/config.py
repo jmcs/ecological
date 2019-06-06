@@ -38,7 +38,6 @@ try:  # Types added in Python 3.6.1
 except ImportError:
     Deque = Counter = _NOT_IMPORTED
 
-_NO_DEFAULT = object()
 TYPES_THAT_NEED_TO_BE_PARSED = [bool, list, set, tuple, dict]
 TYPING_TO_REGULAR_TYPE = {
     AnyStr: str,
@@ -122,46 +121,50 @@ def cast(representation: str, wanted_type: type):
 
 VariableName = NewType("VariableName", Union[str, bytes])
 VariableValue = NewType("VariableValue", Union[str, bytes])
+Source = NewType("Source", Dict[VariableName, VariableValue])
+TransformCallable = NewType("TransformCallable", Callable[[VariableValue, type], Any])
+Prefix = NewType("Prefix", VariableName)
+_NO_DEFAULT = object()
 
 
+@dataclasses.dataclass
 class Variable:
     """
-    Class to handle specific properties
+    
     """
 
-    def __init__(
+    name: VariableName
+    default: Any = _NO_DEFAULT
+    transform: Optional[TransformCallable] = None
+    source: Optional[Source] = None
+    prefix: Optional[Prefix] = None
+
+    def finalize(
         self,
-        variable_name: VariableName,
-        default=_NO_DEFAULT,
         *,
-        transform: Callable[[str, type], Any] = cast,
-        source: Dict[VariableName, VariableValue] = os.environ,
+        prefix: Optional[Prefix] = None,
+        transform: TransformCallable,
+        source: Source,
     ):
-        """
-        :param variable_name: Environment variable to get
-        :param default: Default value.
-        :param transform: function to convert the env string to the wanted type
-        """
-        self.name = variable_name
-        self.default = default
-        self.transform = transform
-        self.source = source
+        if not self.prefix and prefix:
+            separator = {str: "_", bytes: b"_"}
+            self.name = prefix + separator[type(prefix)] + self.name
+        self.name = self.name.upper()
+        self.transform = self.transform or transform
+        self.source = self.source or source
 
     def get(self, wanted_type: WantedType) -> Union[WantedType, Any]:
         """
-        Gets ``self.variable_name`` from the environment and tries to cast it to ``wanted_type``.
+        Gets ``self.name`` from the environment and tries to cast it to ``wanted_type``.
 
         If ``self.default`` is ``_NO_DEFAULT`` and the env variable is not set this will raise an
         ``AttributeError``, if the ``self.default`` is set to something else, its value will be
         returned.
 
         If casting fails, this function will raise a ``ValueError``.
-
-        :param wanted_type: type to return
-        :return: value as wanted_type
         """
         try:
-            raw_value = self.source[self.name]
+            raw_value = self.source[self.name.upper()]
         except KeyError:
             if self.default is _NO_DEFAULT:
                 raise AttributeError(f"Configuration error: '{self.name}' is not set.")
@@ -200,6 +203,8 @@ class _Options:
 
     prefix: Optional[str] = None
     autoload: Autoload = Autoload.CLASS
+    source: Source = os.environ
+    transform: TransformCallable = cast
 
     @classmethod
     def from_metaclass_kwargs(cls, metaclass_kwargs: Dict) -> "Options":
@@ -290,7 +295,6 @@ class Config:
         target_obj = target_obj or cls
         annotations: Dict[str, type] = get_type_hints(cls)
         attribute_dict = vars(cls).copy()
-        prefix = cls._options.prefix
 
         # Add attributes without defaults to the the attribute dict
         attribute_dict.update(
@@ -302,21 +306,19 @@ class Config:
         )
 
         for attribute_name, default_value in attribute_dict.items():
-            if attribute_name.startswith("_"):
-                # private attributes are not changed
+            if attribute_name.startswith("_") or isinstance(default_value, cls):
+                # private attributes and nested configs are not changed
                 continue
+
             if isinstance(default_value, Variable):
                 attribute = default_value
-            elif isinstance(default_value, Config):
-                # passthrough for nested configs
-                setattr(target_obj, attribute_name, default_value)
-                continue
             else:
-                if prefix:
-                    env_variable_name = f"{prefix}_{attribute_name}".upper()
-                else:
-                    env_variable_name = attribute_name.upper()
-                attribute = Variable(env_variable_name, default_value)
+                attribute = Variable(attribute_name, default_value)
+            attribute.finalize(
+                prefix=cls._options.prefix,
+                transform=cls._options.transform,
+                source=cls._options.source,
+            )
 
             attribute_type = annotations.get(
                 attribute_name, str
@@ -333,3 +335,6 @@ class AutoConfig(Config, autoload=Autoload.NEVER):
             DeprecationWarning,
         )
         super().__init_subclass__(prefix=prefix, autoload=Autoload.CLASS)
+
+
+dataclasses.field
