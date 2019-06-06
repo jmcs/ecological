@@ -4,8 +4,23 @@ import dataclasses
 import enum
 import os
 import warnings
-from typing import (Any, AnyStr, ByteString, Callable, Dict, FrozenSet, List,
-                    Optional, Set, Tuple, Type, TypeVar, Union, get_type_hints)
+from typing import (
+    Any,
+    AnyStr,
+    ByteString,
+    Callable,
+    Dict,
+    FrozenSet,
+    List,
+    NewType,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    get_type_hints,
+)
 
 try:
     from typing import GenericMeta
@@ -105,6 +120,10 @@ def cast(representation: str, wanted_type: type):
         return wanted_type(representation)
 
 
+VariableName = NewType("VariableName", Union[str, bytes])
+VariableValue = NewType("VariableValue", Union[str, bytes])
+
+
 class Variable:
     """
     Class to handle specific properties
@@ -112,10 +131,11 @@ class Variable:
 
     def __init__(
         self,
-        variable_name: str,
+        variable_name: VariableName,
         default=_NO_DEFAULT,
         *,
         transform: Callable[[str, type], Any] = cast,
+        source: Dict[VariableName, VariableValue] = os.environ,
     ):
         """
         :param variable_name: Environment variable to get
@@ -125,6 +145,7 @@ class Variable:
         self.name = variable_name
         self.default = default
         self.transform = transform
+        self.source = source
 
     def get(self, wanted_type: WantedType) -> Union[WantedType, Any]:
         """
@@ -140,7 +161,7 @@ class Variable:
         :return: value as wanted_type
         """
         try:
-            raw_value = os.environ[self.name]
+            raw_value = self.source[self.name]
         except KeyError:
             if self.default is _NO_DEFAULT:
                 raise AttributeError(f"Configuration error: '{self.name}' is not set.")

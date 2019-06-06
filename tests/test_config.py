@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 import typing
 
 import pytest
@@ -203,3 +204,12 @@ def test_config_autoload_is_ignored_on_autoconfig():
 
         class Configuration(ecological.AutoConfig, autoload=ecological.Autoload.NEVER):
             my_var1: str
+
+
+def test_variable_is_loaded_from_source(monkeypatch, base_class):
+    monkeypatch.setitem(os.environb, b"A_BYTES", b"a-bytes-value")
+
+    class Configuration(base_class):
+        a_bytes: bytes = ecological.Variable(b"A_BYTES", source=os.environb)
+
+    assert Configuration.a_bytes == b"a-bytes-value"
