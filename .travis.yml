@@ -5,6 +5,9 @@ before_install: pip install poetry
 install: poetry install
 script: poetry run python -m pytest ecological --cov-report term-missing --cov-report xml tests/
 after_success:
+  - printenv
+  - ls -al
+  - pwd
   - python-codacy-coverage -r coverage.xml
 env:
   - secure: >-
