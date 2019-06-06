@@ -1,7 +1,7 @@
 dist: xenial
 language: python
 python: ["3.6", "3.7"]
-before_install: pip install poetry
+before_install: pip install poetry codacy-coverage
 install: poetry install
 script: poetry run python -m pytest ecological --cov ecological/ --cov-report xml tests/
 after_success:
