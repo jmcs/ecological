@@ -1,12 +1,20 @@
+dist: xenial
 language: python
-python:
-  - "3.6"
-install:
-  - pip install tox tox-travis
-  - pip install codacy-coverage
-script:
-  - tox
+python: ["3.6", "3.7"]
+before_install: pip install poetry codacy-coverage
+install: poetry install
+script: poetry run python -m pytest ecological --cov ecological/ --cov-report xml tests/
 after_success:
   - python-codacy-coverage -r coverage.xml
 env:
-  - secure: "ikRwXBf+uwyJ0AqvPcmK5uPVuxPLMT/3wyaVkAnkrMIppXrG3Z9rGaKOOybet+xC2XK/oYkqB8KIgOhXc67IRjqeGWbXQhUPjMNc96JJg1iIxfivbYzbJDFryzxvVHJN/fs1MBaCkG+GQM3rLxMc+x2dTxo5f73W+n1DQVdO3hvlXQhBANVKGzDeBeUhmldYjvtk9yhxULH7mXbFty0GX46AiBF5eFXgF+ESjq6RHdtS/GK3PaAPTn8wCbm5bB7VqCcZAD2hkyEj8R00603m1m8sTYBwNHC8XlHjzH79rjfXhtCFCUuUtWSibClNYS5OBJzL/vYDrbBWjPDuzzdpSpZlXG2zf/A1sp5yUOJtjROJ8zticKkAhp8rYNzy/COFPtBZgRQE5noFkYXcBKTETwkF2lb8e5w/zMnknpyeMYjR63ptpHTpQt08aB4aidu9HgKR2QIKfoK+N1uz7bJvt2AGe6bSylFOU6U5mK59P6p8o2ffA4/LrCCxv8ilgJZRlZhEhcJwOnUquuedHhxSbdgMZw8bHRSK9cDq66uGd7yBAteN+t208U1Fu2ng8TpQ2eHqFAXAbJr2yKQ+hgaaw3yi8j9ULIcd6CiICmh6bdbp9StgTMZ3cs2ggRshmEDX67v+dQvcP9caN8rkFRNlPMAJYb3Ns9quuuFhpTY3QbY="
+  - secure: >-
+      ikRwXBf+uwyJ0AqvPcmK5uPVuxPLMT/3wyaVkAnkrMIppXrG3Z9rGaKOOybet+xC2XK/oYkqB
+      8KIgOhXc67IRjqeGWbXQhUPjMNc96JJg1iIxfivbYzbJDFryzxvVHJN/fs1MBaCkG+GQM3rLx
+      Mc+x2dTxo5f73W+n1DQVdO3hvlXQhBANVKGzDeBeUhmldYjvtk9yhxULH7mXbFty0GX46AiBF
+      5eFXgF+ESjq6RHdtS/GK3PaAPTn8wCbm5bB7VqCcZAD2hkyEj8R00603m1m8sTYBwNHC8XlHj
+      zH79rjfXhtCFCUuUtWSibClNYS5OBJzL/vYDrbBWjPDuzzdpSpZlXG2zf/A1sp5yUOJtjROJ8
+      zticKkAhp8rYNzy/COFPtBZgRQE5noFkYXcBKTETwkF2lb8e5w/zMnknpyeMYjR63ptpHTpQt
+      08aB4aidu9HgKR2QIKfoK+N1uz7bJvt2AGe6bSylFOU6U5mK59P6p8o2ffA4/LrCCxv8ilgJZ
+      RlZhEhcJwOnUquuedHhxSbdgMZw8bHRSK9cDq66uGd7yBAteN+t208U1Fu2ng8TpQ2eHqFAXA
+      bJr2yKQ+hgaaw3yi8j9ULIcd6CiICmh6bdbp9StgTMZ3cs2ggRshmEDX67v+dQvcP9caN8rkF
+      RNlPMAJYb3Ns9quuuFhpTY3QbY=
