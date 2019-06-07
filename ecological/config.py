@@ -119,66 +119,6 @@ def cast(representation: str, wanted_type: type):
         return wanted_type(representation)
 
 
-VariableName = NewType("VariableName", Union[str, bytes])
-VariableValue = NewType("VariableValue", Union[str, bytes])
-Source = NewType("Source", Dict[VariableName, VariableValue])
-TransformCallable = NewType("TransformCallable", Callable[[VariableValue, type], Any])
-Prefix = NewType("Prefix", VariableName)
-_NO_DEFAULT = object()
-
-
-@dataclasses.dataclass
-class Variable:
-    """
-    
-    """
-
-    name: VariableName
-    default: Any = _NO_DEFAULT
-    transform: Optional[TransformCallable] = None
-    source: Optional[Source] = None
-    prefix: Optional[Prefix] = None
-
-    def finalize(
-        self,
-        *,
-        prefix: Optional[Prefix] = None,
-        transform: TransformCallable,
-        source: Source,
-    ):
-        if not self.prefix and prefix:
-            separator = {str: "_", bytes: b"_"}
-            self.name = prefix + separator[type(prefix)] + self.name
-        self.name = self.name.upper()
-        self.transform = self.transform or transform
-        self.source = self.source or source
-
-    def get(self, wanted_type: WantedType) -> Union[WantedType, Any]:
-        """
-        Gets ``self.name`` from the environment and tries to cast it to ``wanted_type``.
-
-        If ``self.default`` is ``_NO_DEFAULT`` and the env variable is not set this will raise an
-        ``AttributeError``, if the ``self.default`` is set to something else, its value will be
-        returned.
-
-        If casting fails, this function will raise a ``ValueError``.
-        """
-        try:
-            raw_value = self.source[self.name.upper()]
-        except KeyError:
-            if self.default is _NO_DEFAULT:
-                raise AttributeError(f"Configuration error: '{self.name}' is not set.")
-            else:
-                return self.default
-
-        try:
-            value = self.transform(raw_value, wanted_type)
-        except (ValueError, SyntaxError) as e:
-            raise ValueError(f"Invalid configuration for '{self.name}': {e}.")
-
-        return value
-
-
 class Autoload(enum.Enum):
     """
     Represents different approaches to the attribute values
@@ -192,6 +132,13 @@ class Autoload(enum.Enum):
     CLASS = "CLASS"
     OBJECT = "OBJECT"
     NEVER = "NEVER"
+
+
+VariableName = NewType("VariableName", Union[str, bytes])
+VariableValue = NewType("VariableValue", Union[str, bytes])
+Source = NewType("Source", Dict[VariableName, VariableValue])
+TransformCallable = NewType("TransformCallable", Callable[[VariableValue, type], Any])
+_NO_DEFAULT = object()
 
 
 @dataclasses.dataclass
@@ -226,6 +173,21 @@ class _Options:
             raise ValueError(
                 f"Invalid options for Config class: {metaclass_kwargs}."
             ) from e
+
+
+class Variable:
+    def __init__(
+        self,
+        variable_name: Optional[VariableName] = None,
+        default: Any = _NO_DEFAULT,
+        *,
+        transform: Optional[TransformCallable] = None,
+        source: Optional[Source] = None,
+    ):
+        self.name = variable_name
+        self.default = default
+        self.transform = transform
+        self.source = source
 
 
 class Config:
@@ -272,6 +234,39 @@ class Config:
             cls.load(self)
 
     @classmethod
+    def fetch_source_value(
+        cls: "Config", attr_name: str, attr_value: Any, attr_type: type
+    ):
+        if isinstance(attr_value, Variable):
+            source_name = attr_value.name
+            default = attr_value.default
+            transform = attr_value.transform or cls._options.transform
+            source = attr_value.source or cls._options.source
+        else:
+            source_name = attr_name
+            if cls._options.prefix:
+                source_name = f"{cls._options.prefix}_{source_name}"
+            source_name = source_name.upper()
+            default = attr_value
+            transform = cls._options.transform
+            source = cls._options.source
+
+        try:
+            raw_value = source[source_name]
+        except KeyError as e:
+            if default is _NO_DEFAULT:
+                raise AttributeError(
+                    f"Configuration error: '{source_name}' is not set."
+                ) from e
+            else:
+                return default
+
+        try:
+            return transform(raw_value, attr_type)
+        except (ValueError, SyntaxError) as e:
+            raise ValueError(f"Invalid configuration for '{source_name}': {e}.")
+
+    @classmethod
     def load(cls: "Config", target_obj: Optional[object] = None):
         """
         The class' ``attribute_dict`` includes attributes with a default value and some special
@@ -293,38 +288,19 @@ class Config:
             (the default value or ``_NO_DEFAULT``) and do the same process as in the previous point.
         """
         target_obj = target_obj or cls
-        annotations: Dict[str, type] = get_type_hints(cls)
-        attribute_dict = vars(cls).copy()
+        cls_dict = vars(cls).copy()
+        attr_types: Dict[str, type] = get_type_hints(cls)
+        attr_names = set(cls_dict).union(attr_types.keys())
 
-        # Add attributes without defaults to the the attribute dict
-        attribute_dict.update(
-            {
-                attribute_name: _NO_DEFAULT
-                for attribute_name in annotations.keys()
-                if attribute_name not in attribute_dict
-            }
-        )
-
-        for attribute_name, default_value in attribute_dict.items():
-            if attribute_name.startswith("_") or isinstance(default_value, cls):
-                # private attributes and nested configs are not changed
+        for attr_name in attr_names:
+            if attr_name.startswith("_") or isinstance(attr_name, cls):
                 continue
 
-            if isinstance(default_value, Variable):
-                attribute = default_value
-            else:
-                attribute = Variable(attribute_name, default_value)
-            attribute.finalize(
-                prefix=cls._options.prefix,
-                transform=cls._options.transform,
-                source=cls._options.source,
-            )
+            attr_value = cls_dict.get(attr_name, _NO_DEFAULT)
+            attr_type = attr_types.get(attr_name, str)
 
-            attribute_type = annotations.get(
-                attribute_name, str
-            )  # by default attributes are strings
-            value = attribute.get(attribute_type)
-            setattr(target_obj, attribute_name, value)
+            source_value = cls.fetch_source_value(attr_name, attr_value, attr_type)
+            setattr(target_obj, attr_name, source_value)
 
 
 # DEPRECATED: For backward compatibility purposes only
