@@ -2,8 +2,7 @@ import dataclasses
 import enum
 import os
 import warnings
-from typing import (Any, Callable, Dict, NewType, Optional, Union,
-                    get_type_hints)
+from typing import Any, Callable, Dict, NewType, Optional, Union, get_type_hints
 
 from . import casting
 
@@ -47,8 +46,8 @@ class Autoload(enum.Enum):
 @dataclasses.dataclass
 class _Options:
     """
-    Acts as a container for metaclass keyword arguments provided during 
-    ``Config`` class creation. 
+    Acts as a container for metaclass keyword arguments provided during
+    ``Config`` class creation.
     """
 
     prefix: Optional[str] = None
