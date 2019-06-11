@@ -213,3 +213,34 @@ def test_variable_is_loaded_from_source(monkeypatch, base_class):
         a_bytes: bytes = ecological.Variable(b"A_BYTES", source=os.environb)
 
     assert Configuration.a_bytes == b"a-bytes-value"
+
+
+def test_global_transform_option_is_used_as_default(monkeypatch):
+    monkeypatch.setenv("IMPLICIT", "a")
+    monkeypatch.setenv("VAR_WITH_TRANSFORM", "b")
+    monkeypatch.setenv("VAR_WITHOUT_TRANSFORM", "c")
+
+    class Configuration(ecological.Config, transform=lambda *args: "GLOBAL_TRANSFORM"):
+        implicit: str
+        var_without_transform = ecological.Variable("VAR_WITHOUT_TRANSFORM")
+        var_with_transform: int = ecological.Variable(
+            "VAR_WITH_TRANSFORM", transform=lambda *args: "VAR_TRANSFORM"
+        )
+
+    assert Configuration.implicit == "GLOBAL_TRANSFORM"
+    assert Configuration.var_with_transform == "VAR_TRANSFORM"
+    assert Configuration.var_without_transform == "GLOBAL_TRANSFORM"
+
+
+def test_global_source_option_is_used_as_default(monkeypatch):
+    my_dict = {"IMPLICIT": "a", "VAR_WITHOUT_SOURCE": "b"}
+    monkeypatch.setenv("VAR_WITH_SOURCE", "c")
+
+    class Configuration(ecological.Config, source=my_dict):
+        implicit: str
+        var_without_source = ecological.Variable("VAR_WITHOUT_SOURCE")
+        var_with_source = ecological.Variable("VAR_WITH_SOURCE", source=os.environ)
+
+    assert Configuration.implicit == "a"
+    assert Configuration.var_without_source == "b"
+    assert Configuration.var_with_source == "c"

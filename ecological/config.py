@@ -2,30 +2,15 @@ import dataclasses
 import enum
 import os
 import warnings
-from typing import Any, Callable, Dict, NewType, Optional, Union, get_type_hints
+from typing import Any, Callable, Dict, NewType, Optional, Type, Union, get_type_hints
 
 from . import casting
 
+_NO_DEFAULT = object()
 VariableName = NewType("VariableName", Union[str, bytes])
 VariableValue = NewType("VariableValue", Union[str, bytes])
 Source = NewType("Source", Dict[VariableName, VariableValue])
-TransformCallable = NewType("TransformCallable", Callable[[VariableValue, type], Any])
-_NO_DEFAULT = object()
-
-
-class Variable:
-    def __init__(
-        self,
-        variable_name: Optional[VariableName] = None,
-        default: Any = _NO_DEFAULT,
-        *,
-        transform: Optional[TransformCallable] = None,
-        source: Optional[Source] = None,
-    ):
-        self.name = variable_name
-        self.default = default
-        self.transform = transform
-        self.source = source
+TransformCallable = NewType("TransformCallable", Callable[[VariableValue, Type], Any])
 
 
 class Autoload(enum.Enum):
@@ -46,7 +31,7 @@ class Autoload(enum.Enum):
 @dataclasses.dataclass
 class _Options:
     """
-    Acts as a container for metaclass keyword arguments provided during
+    Acts as the container for metaclass keyword arguments provided during
     ``Config`` class creation.
     """
 
@@ -54,16 +39,17 @@ class _Options:
     autoload: Autoload = Autoload.CLASS
     source: Source = os.environ
     transform: TransformCallable = casting.cast
+    wanted_type: Type = str
 
     @classmethod
-    def from_metaclass_kwargs(cls, metaclass_kwargs: Dict) -> "Options":
+    def from_dict(cls, options_dict: Dict) -> "_Options":
         """
         Produces ``_Options`` instance from given dictionary.
-        Items are deleted from ``metaclass_kwargs`` as a side-effect.
+        Items are deleted from ``options_dict`` as a side-effect.
         """
         options_kwargs = {}
         for field in dataclasses.fields(cls):
-            value = metaclass_kwargs.pop(field.name, None)
+            value = options_dict.pop(field.name, None)
             if value is None:
                 continue
 
@@ -73,8 +59,40 @@ class _Options:
             return cls(**options_kwargs)
         except TypeError as e:
             raise ValueError(
-                f"Invalid options for Config class: {metaclass_kwargs}."
+                f"Invalid options for Config class: {options_dict}."
             ) from e
+
+
+@dataclasses.dataclass
+class Variable:
+    variable_name: VariableName
+    default: Any = _NO_DEFAULT
+    transform: Optional[TransformCallable] = None
+    source: Optional[Source] = None
+    wanted_type: Type = dataclasses.field(init=False)
+
+    def set_defaults(
+        self, *, transform: TransformCallable, source: Source, wanted_type: Type
+    ):
+        self.transform = self.transform or transform
+        self.source = self.source or source
+        self.wanted_type = wanted_type
+
+    def get(self) -> VariableValue:
+        try:
+            raw_value = self.source[self.variable_name]
+        except KeyError as e:
+            if self.default is _NO_DEFAULT:
+                raise AttributeError(
+                    f"Configuration error: '{self.variable_name}' is not set."
+                ) from e
+            else:
+                return self.default
+
+        try:
+            return self.transform(raw_value, self.wanted_type)
+        except (ValueError, SyntaxError) as e:
+            raise ValueError(f"Invalid configuration for '{self.variable_name}': {e}.")
 
 
 class Config:
@@ -94,7 +112,7 @@ class Config:
 
     It is possible to defer the calculation of attribute values by specifying the ``autoload``
     keyword argument on your class definition. For possible strategies see the ``Autoload`` class definition.
-    
+
     Caveats and Known Limitations
     =============================
 
@@ -109,7 +127,7 @@ class Config:
     _options: _Options
 
     def __init_subclass__(cls, **kwargs):
-        cls._options = _Options.from_metaclass_kwargs(kwargs)
+        cls._options = _Options.from_dict(kwargs)
         super().__init_subclass__(**kwargs)
         if cls._options.autoload is Autoload.CLASS:
             cls.load(cls)
@@ -119,40 +137,6 @@ class Config:
         cls = type(self)
         if cls._options.autoload is Autoload.OBJECT:
             cls.load(self)
-
-    @classmethod
-    def fetch_source_value(
-        cls: "Config", attr_name: str, attr_value: Any, attr_type: type
-    ):
-        if isinstance(attr_value, Variable):
-            source_name = attr_value.name
-            default = attr_value.default
-            transform = attr_value.transform or cls._options.transform
-            source = attr_value.source or cls._options.source
-        else:
-            source_name = attr_name
-            if cls._options.prefix:
-                source_name = f"{cls._options.prefix}_{source_name}"
-            source_name = source_name.upper()
-
-            default = attr_value
-            transform = cls._options.transform
-            source = cls._options.source
-
-        try:
-            raw_value = source[source_name]
-        except KeyError as e:
-            if default is _NO_DEFAULT:
-                raise AttributeError(
-                    f"Configuration error: '{source_name}' is not set."
-                ) from e
-            else:
-                return default
-
-        try:
-            return transform(raw_value, attr_type)
-        except (ValueError, SyntaxError) as e:
-            raise ValueError(f"Invalid configuration for '{source_name}': {e}.")
 
     @classmethod
     def load(cls: "Config", target_obj: Optional[object] = None):
@@ -183,12 +167,25 @@ class Config:
         for attr_name in attr_names:
             if attr_name.startswith("_") or isinstance(attr_name, cls):
                 continue
-
             attr_value = cls_dict.get(attr_name, _NO_DEFAULT)
-            attr_type = attr_types.get(attr_name, str)
+            attr_type = attr_types.get(attr_name, cls._options.wanted_type)
 
-            source_value = cls.fetch_source_value(attr_name, attr_value, attr_type)
-            setattr(target_obj, attr_name, source_value)
+            if isinstance(attr_value, Variable):
+                variable = attr_value
+            else:
+                if cls._options.prefix:
+                    prefix = cls._options.prefix + "_"
+                else:
+                    prefix = ""
+                variable_name = (prefix + attr_name).upper()
+                variable = Variable(variable_name, attr_value)
+            variable.set_defaults(
+                transform=cls._options.transform,
+                source=cls._options.source,
+                wanted_type=attr_type,
+            )
+
+            setattr(target_obj, attr_name, variable.get())
 
 
 # DEPRECATED: For backward compatibility purposes only
