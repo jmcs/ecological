@@ -2,8 +2,7 @@ import dataclasses
 import enum
 import os
 import warnings
-from typing import (Any, Callable, Dict, NewType, Optional, Type, Union,
-                    get_type_hints)
+from typing import Any, Callable, Dict, NewType, Optional, Type, Union, get_type_hints
 
 from . import casting
 
@@ -29,17 +28,13 @@ class Autoload(enum.Enum):
     NEVER = "NEVER"
 
 
-def environ_name(attr_name: str, prefix: Optional[str] = None):
+def _generate_environ_name(attr_name: str, prefix: Optional[str] = None):
     variable_name = ""
     if prefix:
         variable_name += f"{prefix}_"
     variable_name += attr_name
 
     return variable_name.upper()
-
-
-def environb_name(*args, **kwargs):
-    return environ_name(*args, **kwargs).encode()
 
 
 @dataclasses.dataclass
@@ -54,7 +49,7 @@ class _Options:
     source: Source = os.environ
     transform: TransformCallable = casting.cast
     wanted_type: Type = str
-    variable_name: Callable[[str, Optional[str]], VariableName] = environ_name
+    variable_name: Callable[[str, Optional[str]], VariableName] = _generate_environ_name
 
     @classmethod
     def from_dict(cls, options_dict: Dict) -> "_Options":
