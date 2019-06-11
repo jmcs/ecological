@@ -2,7 +2,8 @@ import dataclasses
 import enum
 import os
 import warnings
-from typing import Any, Callable, Dict, NewType, Optional, Type, Union, get_type_hints
+from typing import (Any, Callable, Dict, NewType, Optional, Type, Union,
+                    get_type_hints)
 
 from . import casting
 
@@ -28,6 +29,15 @@ class Autoload(enum.Enum):
     NEVER = "NEVER"
 
 
+def environ_name(attr_name: str, prefix: Optional[str] = None):
+    variable_name = ""
+    if prefix:
+        variable_name += f"{prefix}_"
+    variable_name += attr_name
+
+    return variable_name.upper()
+
+
 @dataclasses.dataclass
 class _Options:
     """
@@ -40,6 +50,7 @@ class _Options:
     source: Source = os.environ
     transform: TransformCallable = casting.cast
     wanted_type: Type = str
+    variable_name: Callable[[str, Optional[str]], VariableName] = environ_name
 
     @classmethod
     def from_dict(cls, options_dict: Dict) -> "_Options":
@@ -65,15 +76,21 @@ class _Options:
 
 @dataclasses.dataclass
 class Variable:
-    variable_name: VariableName
+    variable_name: Optional[VariableName] = None
     default: Any = _NO_DEFAULT
     transform: Optional[TransformCallable] = None
     source: Optional[Source] = None
     wanted_type: Type = dataclasses.field(init=False)
 
     def set_defaults(
-        self, *, transform: TransformCallable, source: Source, wanted_type: Type
+        self,
+        *,
+        variable_name: VariableName,
+        transform: TransformCallable,
+        source: Source,
+        wanted_type: Type,
     ):
+        self.variable_name = self.variable_name or variable_name
         self.transform = self.transform or transform
         self.source = self.source or source
         self.wanted_type = wanted_type
@@ -173,13 +190,11 @@ class Config:
             if isinstance(attr_value, Variable):
                 variable = attr_value
             else:
-                if cls._options.prefix:
-                    prefix = cls._options.prefix + "_"
-                else:
-                    prefix = ""
-                variable_name = (prefix + attr_name).upper()
-                variable = Variable(variable_name, attr_value)
+                variable = Variable(default=attr_value)
             variable.set_defaults(
+                variable_name=cls._options.variable_name(
+                    attr_name, prefix=cls._options.prefix
+                ),
                 transform=cls._options.transform,
                 source=cls._options.source,
                 wanted_type=attr_type,
