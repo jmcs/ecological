@@ -38,6 +38,10 @@ def environ_name(attr_name: str, prefix: Optional[str] = None):
     return variable_name.upper()
 
 
+def environb_name(*args, **kwargs):
+    return environ_name(*args, **kwargs).encode()
+
+
 @dataclasses.dataclass
 class _Options:
     """
