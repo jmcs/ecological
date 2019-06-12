@@ -2,7 +2,8 @@ import dataclasses
 import enum
 import os
 import warnings
-from typing import Any, Callable, Dict, NewType, Optional, Type, Union, get_type_hints
+from typing import (Any, Callable, Dict, NewType, Optional, Type, Union,
+                    get_type_hints)
 
 from . import casting
 
@@ -28,7 +29,9 @@ class Autoload(enum.Enum):
     NEVER = "NEVER"
 
 
-def _generate_environ_name(attr_name: str, prefix: Optional[str] = None):
+def _generate_environ_name(
+    attr_name: str, prefix: Optional[str] = None
+) -> VariableName:
     variable_name = ""
     if prefix:
         variable_name += f"{prefix}_"
@@ -97,7 +100,7 @@ class Variable:
     def get(self) -> VariableValue:
         try:
             raw_value = self.source[self.variable_name]
-        except KeyError as e:
+        except KeyError:
             if self.default is _NO_DEFAULT:
                 raise AttributeError(
                     f"Configuration error: '{self.variable_name}' is not set."
@@ -108,7 +111,9 @@ class Variable:
         try:
             return self.transform(raw_value, self.wanted_type)
         except (ValueError, SyntaxError) as e:
-            raise ValueError(f"Invalid configuration for '{self.variable_name}': {e}.") from e
+            raise ValueError(
+                f"Invalid configuration for '{self.variable_name}'."
+            ) from e
 
 
 class Config:
