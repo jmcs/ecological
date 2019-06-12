@@ -1,9 +1,12 @@
+"""
+The heart of the library.
+See ``README.rst`` and ``Configuration`` class for more details.
+"""
 import dataclasses
 import enum
 import os
 import warnings
-from typing import (Any, Callable, Dict, NewType, Optional, Type, Union,
-                    get_type_hints)
+from typing import Any, Callable, Dict, NewType, Optional, Type, Union, get_type_hints
 
 from . import casting
 
@@ -21,7 +24,7 @@ class Autoload(enum.Enum):
 
     - ``Autoload.CLASS`` - load variable values to class on its subclass creation,
     - ``Autoload.OBJECT`` - load variable values to object instance on its initialization,
-    - ``Autoload.NEVER`` - does not perform any autoloading; ``Config.load`` method needs to called explicitly.
+    - ``Autoload.NEVER`` - does not perform any autoloading; ``Config.load`` method needs to be called explicitly.
     """
 
     CLASS = "CLASS"
@@ -32,6 +35,13 @@ class Autoload(enum.Enum):
 def _generate_environ_name(
     attr_name: str, prefix: Optional[str] = None
 ) -> VariableName:
+    """
+    Outputs an environment variable name based on the ``Configuration``'s
+    subclass attribute name and the optional prefix.
+
+    >>> _generate_environ_name("attr_name", prefix="prefixed")
+    "PREFIXED_ATTR_NAME"
+    """
     variable_name = ""
     if prefix:
         variable_name += f"{prefix}_"
@@ -78,6 +88,11 @@ class _Options:
 
 @dataclasses.dataclass
 class Variable:
+    """
+    Represents a single variable from the configuration source
+    and user preferences how to process it.
+    """
+
     variable_name: Optional[VariableName] = None
     default: Any = _NO_DEFAULT
     transform: Optional[TransformCallable] = None
@@ -92,12 +107,21 @@ class Variable:
         source: Source,
         wanted_type: Type,
     ):
+        """
+        Sets missing properties of the instance of `Variable`` in order to
+        be able to fetch its value with the ``Variable.get`` method.
+        """
         self.variable_name = self.variable_name or variable_name
         self.transform = self.transform or transform
         self.source = self.source or source
         self.wanted_type = wanted_type
 
     def get(self) -> VariableValue:
+        """
+        Fetches a value of variable from the ``self.source`` and invoke the
+        ``self.transform`` operation on it. Falls back to ``self.default``
+        if the value is not found.
+        """
         try:
             raw_value = self.source[self.variable_name]
         except KeyError:
@@ -207,8 +231,11 @@ class Config:
             setattr(target_obj, attr_name, variable.get())
 
 
-# DEPRECATED: For backward compatibility purposes only
 class AutoConfig(Config, autoload=Autoload.NEVER):
+    """
+    DEPRECATED: For backward compatibility purposes only; please use ``ecological.Config`` instead.
+    """
+
     def __init_subclass__(cls, prefix: Optional[str] = None, **kwargs):
         warnings.warn(
             "ecological.AutoConfig is deprecated, please use ecological.Config instead.",

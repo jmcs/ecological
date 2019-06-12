@@ -1,3 +1,7 @@
+"""
+Provides ``cast`` function (default transform function for variables of `config.Config`)
+mitigating a number of `typing` module quirks that happen across Python versions.
+"""
 import ast
 import collections
 from typing import AnyStr, ByteString, Dict, FrozenSet, List, Set, Tuple
