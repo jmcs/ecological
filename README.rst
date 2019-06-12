@@ -35,8 +35,70 @@ class properties from the environment variables with the same (but upper cased) 
 By default the values are set at the class definition type and assigned to the class itself (i.e. the class doesn't need to be
 instantiated). If needed this behavior can be changed (see the next section).
 
+Typing Support
+==============
+``Ecological`` also supports some of the types defined in PEP484_, for example:
+
+.. code-block:: python
+
+
+    class Configuration(ecological.Config):
+        list_of_values: List[str]
+
+Will automatically parse the environment variable value as a list.
+
+.. note:: Please note that while this will ensure ``Configuration.list_of_values`` is a list it will not check that it
+          contains only strings.
+
+Prefixed Configuration
+======================
+You can also decide to prefix your application configuration, for example, to avoid collisions:
+
+.. code-block:: python
+
+    class Configuration(ecological.Config, prefix='myapp'):
+        home: str
+
+
+In this case the ``home`` property will be fetched from the ``MYAPP_HOME`` environment property.
+
+Nested Configuration
+=====================
+``Ecological.Config`` also supports nested configurations, for example:
+
+.. code-block:: python
+
+
+    class Configuration(ecological.Config):
+        integer: int
+
+        class Nested(ecological.Config, prefix='nested'):
+            boolean: bool
+
+This way you can group related configuration properties hierarchically.
+
+Fine-grained Control
+====================
+You can control how the configuration properties are set by providing a ``ecological.Variable`` instance as the default
+value.
+
+``ecological.Variable`` receives the following parameters:
+
+- ``variable_name`` (optional) - exact name of the environment variable that will be used. If not provided
+  the default mechanism of deriving a name from the attribute name will be applied.
+- ``default`` (optional) - default value for the property if it isn't set.
+- ``transform`` (optional) - function that converts the string in the environment to the value and type you
+  expect in your application. The default ``transform`` function will try to cast the string to the annotation 
+  type of the property.
+- ``source`` (optional) - dictionary that the value will be loaded from; defaults to ``os.environ``.
+
+Transformation function
+-----------------------
+The transformation function receive two parameters, a string ``representation`` with the raw value, and a
+``wanted_type`` with the value of the annotation (usually, but not necessarily a ``type``).
+
 Autoloading
-=============
+===========
 It is possible to defer/disable autoloading (setting) of variable values by specifying the ``autoload`` option on class definition.
 
 On class creation (default)
@@ -79,68 +141,6 @@ If it is preferred to load and store attribute values on the object instance ins
     # Values read and set at this point on ``config``.
     # assert config.port == <value-of-PORT-env-var>
     # Accessing ``Configuration.port`` would throw AttributeError.
-
-
-Typing Support
-==============
-``Ecological`` also supports some of the types defined in PEP484_, for example:
-
-.. code-block:: python
-
-
-    class Configuration(ecological.Config):
-        list_of_values: List[str]
-
-Will automatically parse the environment variable value as a list.
-
-.. note:: Please note that while this will ensure ``Configuration.list_of_values`` is a list it will not check that it
-          contains only strings.
-
-Prefixed Configuration
-======================
-You can also decide to prefix your application configuration, for example, to avoid collisions:
-
-.. code-block:: python
-
-    class Configuration(ecological.Config, prefix='myapp'):
-        home: str
-
-
-In this case the ``home`` property will be fetched from the ``MYAPP_HOME`` environment property.
-
-Fine-grained control
---------------------
-You can control how the configuration properties are set by providing a ``ecological.Variable`` instance as the default
-value.
-
-``ecological.Variable`` receives the following parameters:
-
-- ``variable_name`` (mandatory) - exact name of the environment variable that will be used.
-- ``default`` (optional) - default value for the property if it isn't set.
-- ``transform`` (optional) - function that converts the string in the environment to the value and type you
-  expect in your application. The default ``transform`` function will try to cast the string to the annotation 
-  type of the property.
-
-Transformation function
-.......................
-
-The transformation function receive two parameters, a string ``representation`` with the raw value, and a
-``wanted_type`` with the value of the annotation (usually, but not necessarily a ``type``).
-
-Nested Configuration
---------------------
-``Ecological.Config`` also supports nested configurations, for example:
-
-.. code-block:: python
-
-
-    class Configuration(ecological.Config):
-        integer: int
-
-        class Nested(ecological.Config, prefix='nested'):
-            boolean: bool
-
-This way you can group related configuration properties hierarchically.
 
 Tutorial
 ========

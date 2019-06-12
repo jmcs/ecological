@@ -6,7 +6,8 @@ import dataclasses
 import enum
 import os
 import warnings
-from typing import Any, Callable, Dict, NewType, Optional, Type, Union, get_type_hints
+from typing import (Any, Callable, Dict, NewType, Optional, Type, Union,
+                    get_type_hints)
 
 from . import casting
 
