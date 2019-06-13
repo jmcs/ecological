@@ -195,12 +195,12 @@ class Config:
         cls_dict = vars(cls).copy()
         attr_types: Dict[str, type] = get_type_hints(cls)
         # There is no single place that has all class attributes regardless of
-        # having default value or not. Thus keys of cls.__annotations__ and
+        # having default value or not. Thus the keys of cls.__annotations__ and
         # cls.__dict__ are merged providing a complete list.
         attr_names = set(cls_dict).union(attr_types.keys())
 
         for attr_name in attr_names:
-            # Omit private attributes and nested configuration
+            # Omit private and nested configuration attributes
             # (Attribute value can be the instance of Config itself).
             if attr_name.startswith("_") or isinstance(attr_name, cls):
                 continue
