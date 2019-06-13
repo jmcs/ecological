@@ -187,30 +187,21 @@ class Config:
     @classmethod
     def load(cls: "Config", target_obj: Optional[object] = None):
         """
-        The class' ``attribute_dict`` includes attributes with a default value and some special
-        keys like ``__annotations__`` which includes annotations of all attributes, including the
-        ones that don't have a value.
-
-        To simplify the class building process the annotated attributes that don't have a value
-        in the ``attribute_dict`` are injected with a ``_NO_DEFAULT`` sentinel object.
-
-        After this all the public attributes of the class are iterated over and one
-        of three things is performed:
-
-        - If the attribute value is an instance of ``Config`` it is kept as is to allow nested
-            configuration.
-        - If the attribute value is of type ``Variable``, ``Config`` will call its ``get``
-            method with the attribute's annotation type as the only parameter
-        - Otherwise, ``Config`` will create a ``Variable`` instance, with
-            "{prefix}_{attribute_name}" as the environment variable name and the attribute value
-            (the default value or ``_NO_DEFAULT``) and do the same process as in the previous point.
+        Fetches and converts values of variables declared as attributes on ``cls`` according
+        to their specification and finally assigns them to the corresponding attributes
+        on ``target_obj`` (which by default is ``cls`` itself).
         """
         target_obj = target_obj or cls
         cls_dict = vars(cls).copy()
         attr_types: Dict[str, type] = get_type_hints(cls)
+        # There is no single place that has all class attributes regardless of
+        # having default value or not. Thus keys of cls.__annotations__ and
+        # cls.__dict__ are merged providing a complete list.
         attr_names = set(cls_dict).union(attr_types.keys())
 
         for attr_name in attr_names:
+            # Omit private attributes and nested configuration
+            # (Attribute value can be the instance of Config itself).
             if attr_name.startswith("_") or isinstance(attr_name, cls):
                 continue
             attr_value = cls_dict.get(attr_name, _NO_DEFAULT)
