@@ -120,8 +120,8 @@ All possible options and their meaning can be found in the table below:
 | ``default``       | no            | yes             | (no default)                                    | Default value for the property if it isn't set.                   |
 +-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
 | ``transform``     | yes           | yes             | A source value is casted to the ``wanted_type`` | A function that converts a value from the ``source`` to the value |
-|                   |               |                 | (``ecological.cast``).                          | and ``wanted_type`` you expect with the following signature:      |
-|                   |               |                 |                                                 |                                                                   |
+|                   |               |                 | In case of non-scalar types (+ scalar ``bool``) | and ``wanted_type`` you expect with the following signature:      |
+|                   |               |                 | the value is Python-parsed first.               |                                                                   |
 |                   |               |                 |                                                 | ``def func(source_value: str, wanted_type: Union[Type, str])``    |
 +-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
 | ``source``        | yes           | yes             | ``os.environ``                                  | Dictionary that the value will be loaded from.                    |

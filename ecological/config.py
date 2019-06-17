@@ -6,10 +6,10 @@ import dataclasses
 import enum
 import os
 import warnings
-from typing import (Any, Callable, Dict, NewType, Optional, Type, Union,
-                    get_type_hints)
+from typing import Any, Callable, Dict, NewType, Optional, Type, Union, get_type_hints
 
-from . import casting
+# Aliased in order to avoid a conflict with the _Options.transform attribute.
+from . import transform as transform_module
 
 _NO_DEFAULT = object()
 VariableName = NewType("VariableName", Union[str, bytes])
@@ -61,7 +61,7 @@ class _Options:
     prefix: Optional[str] = None
     autoload: Autoload = Autoload.CLASS
     source: Source = os.environ
-    transform: TransformCallable = casting.cast
+    transform: TransformCallable = transform_module.cast
     wanted_type: Type = str
     variable_name: Callable[[str, Optional[str]], VariableName] = _generate_environ_name
 
