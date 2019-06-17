@@ -77,9 +77,14 @@ Nested Configuration
 
 This way you can group related configuration properties hierarchically.
 
+Advanced
+========
+
 Fine-grained Control
-====================
-You can control how the configuration properties are set by providing a ``ecological.Variable`` instance as the default
+---------------------
+You can control some behavior of how the configuration properties are set.
+
+It can be achieved by providing a ``ecological.Variable`` instance as the default
 value for an attribute or by specifying global options on the class level:
 
 .. code-block:: python
@@ -128,15 +133,21 @@ All possible options and their meaning can be found in the table below:
 |                   |               |                 |                                                 | ``class MyConfig(ecological.Config, wanted_type=int, ...)``       |
 +-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+ 
 
-.. note:: Please mind that in the case of specyfing options on both levels (variable and class)
-          the variable ones take precedence over class ones.
+Following rules apply when options are resolved:
+
+- in the case of specyfing options on both levels (variable and class)
+  the variable ones take precedence over class ones,
+- when some options are missing on the variable level their defaults
+  are taken from the class level,
+- it is not necessary to assign an ``ecological.Variable`` instance to
+  change the behavior; it can still be changed on the class level (globally).
 
 Autoloading
-===========
+------------
 It is possible to defer/disable autoloading (setting) of variable values by specifying the ``autoload`` option on class definition.
 
 On class creation (default)
----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 When no option is provided values are loaded immediately on class creation and assigned to class attributes:
 
 .. code-block:: python
@@ -147,7 +158,7 @@ When no option is provided values are loaded immediately on class creation and a
     # assert Configuration.port == <value-of-PORT-env-var>
 
 Never
-------
+~~~~~
 When this option is chosen, no autoloading happens. In order to set variable values, the ``Config.load`` method needs to be called explicitly:
 
 .. code-block:: python
@@ -162,7 +173,7 @@ When this option is chosen, no autoloading happens. In order to set variable val
     # assert Configuration.port == <value-of-PORT-env-var>
 
 On object instance initialization
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 If it is preferred to load and store attribute values on the object instance instead of the class itself, the ``Autoload.OBJECT`` strategy can be used:
 
 .. code-block:: python
