@@ -244,3 +244,30 @@ def test_global_source_option_is_used_as_default(monkeypatch):
     assert Configuration.implicit == "a"
     assert Configuration.var_without_source == "b"
     assert Configuration.var_with_source == "c"
+
+
+def test_global_wanted_type_option_is_used_as_default(monkeypatch):
+    monkeypatch.setenv("IMPLICIT_1", "1")
+    monkeypatch.setenv("IMPLICIT_WITH_TYPE_2", "2")
+
+    class Configuration(ecological.Config, wanted_type=int):
+        implicit_1 = 99
+        implicit_with_type_2: str
+
+    assert Configuration.implicit_1 == 1
+    assert Configuration.implicit_with_type_2 == "2"
+
+
+def test_variable_name_is_calculation_is_used_as_default(monkeypatch):
+    monkeypatch.setenv("IMPLICIT_THIS_IS_CRAZY", "1")
+    monkeypatch.setenv("MY_ARBITRARY_NAME", "2")
+
+    def my_variable_name(attr_name, prefix=None):
+        return (attr_name + "_THIS_IS_CRAZY").upper()
+
+    class Configuration(ecological.Config, variable_name=my_variable_name):
+        implicit: str
+        var_with_name = ecological.Variable("MY_ARBITRARY_NAME")
+
+    assert Configuration.implicit == "1"
+    assert Configuration.var_with_name == "2"
