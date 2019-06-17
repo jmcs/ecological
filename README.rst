@@ -35,6 +35,10 @@ class properties from the environment variables with the same (but upper cased) 
 By default the values are set at the class definition type and assigned to the class itself (i.e. the class doesn't need to be
 instantiated). If needed this behavior can be changed (see the next section).
 
+Tutorial
+--------
+The `tutorial <tutorial.ipynb>`_  can be used to get to know with the library's basic features interactively.
+
 Typing Support
 ==============
 ``Ecological`` also supports some of the types defined in PEP484_, for example:
@@ -76,11 +80,6 @@ Nested Configuration
             boolean: bool
 
 This way you can group related configuration properties hierarchically.
-
-Tutorial
-========
-The `tutorial <tutorial.ipynb>`_ includes real examples of all the available
-features.
 
 Advanced
 ========
