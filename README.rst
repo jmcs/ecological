@@ -120,7 +120,7 @@ All possible options and their meaning can be found in the table below:
 | ``default``       | no            | yes             | (no default)                                    | Default value for the property if it isn't set.                   |
 +-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
 | ``transform``     | yes           | yes             | A source value is casted to the ``wanted_type`` | A function that converts a value from the ``source`` to the value |
-|                   |               |                 | (``ecological.casting.cast``).                  | and ``wanted_type`` you expect with the following signature:      |
+|                   |               |                 | (``ecological.cast``).                          | and ``wanted_type`` you expect with the following signature:      |
 |                   |               |                 |                                                 |                                                                   |
 |                   |               |                 |                                                 | ``def func(source_value: str, wanted_type: Union[Type, str])``    |
 +-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
