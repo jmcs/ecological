@@ -79,41 +79,57 @@ This way you can group related configuration properties hierarchically.
 
 Fine-grained Control
 ====================
-
-+-------------------+---------------+-----------------+-------------------------------------------------+-----------------------------------------------------------------+
-| Option            | Class level   | Variable level  | Default                                         | Description                                                     |
-+===================+===============+=================+=================================================+=================================================================+
-| ``prefix``        | yes           | no              | ``None``                                        | Prefix that is prepended when a variable name is derived from   |
-|                   |               |                 |                                                 | an attribute name.                                              |
-+-------------------+---------------+-----------------+-------------------------------------------------+-----------------------------------------------------------------+
-| ``variable_name`` | yes           | yes             | Derived from attribute name and prefixed        | When specified on the variable level it states                  |
-|                   |               |                 | with ``prefix`` if specified; uppercased.       | exact name of the source variable that will be used.            |
-|                   |               |                 |                                                 |                                                                 |
-|                   |               |                 |                                                 | When specified on the class level it is treated as a function   |
-|                   |               |                 |                                                 | that returns a variable name from an attribute name with        |
-|                   |               |                 |                                                 | the following signature:                                        |
-|                   |               |                 |                                                 |                                                                 |
-|                   |               |                 |                                                 | ``def func(attribute_name: str, prefix: Optional[str] = None)`` |
-+-------------------+---------------+-----------------+-------------------------------------------------+-----------------------------------------------------------------+
-| ``default``       | no            | yes             | (no default)                                    | Default value for the property if it isn't set.                 |
-+-------------------+---------------+-----------------+-------------------------------------------------+-----------------------------------------------------------------+
-| ``transform``     | yes           | yes             | A source value is casted to the ``wanted_type`` | Function that converts a value from the ``source`` to the value |
-|                   |               |                 | (``ecological.casting.cast``).                  | and ``wanted_type`` you expect with the following signature:    |
-|                   |               |                 |                                                 |                                                                 |
-|                   |               |                 |                                                 | ``def func(source_value: str, wanted_type: Union[Type, str])``  |
-+-------------------+---------------+-----------------+-------------------------------------------------+-----------------------------------------------------------------+
-| ``source``        | yes           | yes             | ``os.environ``                                  | Dictionary that the value will be loaded from.                  |
-+-------------------+---------------+-----------------+-------------------------------------------------+-----------------------------------------------------------------+
-| ``wanted_type``   | yes           | yes             | ``str``                                         |                                                                 |
-+-------------------+---------------+-----------------+-------------------------------------------------+-----------------------------------------------------------------+ 
-
 You can control how the configuration properties are set by providing a ``ecological.Variable`` instance as the default
-value.
+value for an attribute or by specifying global options on the class level:
 
-Class level options
---------------------
-Some of the parameters can also be specified on the class level in order to avoid repetition
-or unnecessary ``ecological.Variable`` declarations when only a subset of options is to be changed globally:
+.. code-block:: python
+
+    my_source: Dict = {"KEY1": "VALUE1"}
+
+    class Configuration(ecological.Config, transform=lambda v, wt: v, wanted_type=int, ...):
+        my_var1: WantedType = ecological.Variable(transform=lambda v, wt: wt(v), source=my_source, ...)
+        my_var2: str
+        # ...
+
+All possible options and their meaning can be found in the table below:
+
++-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
+| Option            | Class level   | Variable level  | Default                                         | Description                                                       |
++===================+===============+=================+=================================================+===================================================================+
+| ``prefix``        | yes           | no              | ``None``                                        | A prefix that is prepended when a variable name is derived from   |
+|                   |               |                 |                                                 | an attribute name.                                                |
++-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
+| ``variable_name`` | yes           | yes             | Derived from attribute name and prefixed        | When specified on the variable level it states                    |
+|                   |               |                 | with ``prefix`` if specified; uppercased.       | the exact name of the source variable that will be used.          |
+|                   |               |                 |                                                 |                                                                   |
+|                   |               |                 |                                                 | When specified on the class level it is treated as a function     |
+|                   |               |                 |                                                 | that returns a variable name from the attribute name with         |
+|                   |               |                 |                                                 | the following signature:                                          |
+|                   |               |                 |                                                 |                                                                   |
+|                   |               |                 |                                                 | ``def func(attribute_name: str, prefix: Optional[str] = None)``   |
++-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
+| ``default``       | no            | yes             | (no default)                                    | Default value for the property if it isn't set.                   |
++-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
+| ``transform``     | yes           | yes             | A source value is casted to the ``wanted_type`` | A function that converts a value from the ``source`` to the value |
+|                   |               |                 | (``ecological.casting.cast``).                  | and ``wanted_type`` you expect with the following signature:      |
+|                   |               |                 |                                                 |                                                                   |
+|                   |               |                 |                                                 | ``def func(source_value: str, wanted_type: Union[Type, str])``    |
++-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
+| ``source``        | yes           | yes             | ``os.environ``                                  | Dictionary that the value will be loaded from.                    |
++-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
+| ``wanted_type``   | yes           | yes             | ``str``                                         | Desired Python type of the attribute's value.                     |
+|                   |               |                 |                                                 |                                                                   |
+|                   |               |                 |                                                 | On the variable level it is specified via a type annotation on    |
+|                   |               |                 |                                                 | the attribute: ``my_var_1: my_wanted_type``.                      |
+|                   |               |                 |                                                 |                                                                   |
+|                   |               |                 |                                                 | However it can be also specified on the class level, then it acts |
+|                   |               |                 |                                                 | as a default when the annotation is not provided:                 |
+|                   |               |                 |                                                 |                                                                   |
+|                   |               |                 |                                                 | ``class MyConfig(ecological.Config, wanted_type=int, ...)``       |
++-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+ 
+
+.. note:: Please mind that in the case of specyfing options on both levels (variable and class)
+          the variable ones take precedence over class ones.
 
 Autoloading
 ===========
