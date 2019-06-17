@@ -77,6 +77,11 @@ Nested Configuration
 
 This way you can group related configuration properties hierarchically.
 
+Tutorial
+========
+The `tutorial <tutorial.ipynb>`_ includes real examples of all the available
+features.
+
 Advanced
 ========
 
@@ -186,11 +191,6 @@ If it is preferred to load and store attribute values on the object instance ins
     # Values read and set at this point on ``config``.
     # assert config.port == <value-of-PORT-env-var>
     # Accessing ``Configuration.port`` would throw AttributeError.
-
-Tutorial
-========
-The `tutorial <tutorial.ipynb>`_ includes real examples of all the available
-features.
 
 Caveats and Known Limitations
 =============================
