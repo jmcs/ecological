@@ -1,11 +1,11 @@
 .. image:: https://travis-ci.org/jmcs/ecological.svg?branch=master
-    :target: https://travis-ci.org/jmcs/ecological
+   :target: https://travis-ci.org/jmcs/ecological
 
 .. image:: https://api.codacy.com/project/badge/Grade/1ff45d0e1a5a40b8ad0569e3edb0539d
    :alt: Codacy Badge
    :target: https://www.codacy.com/app/jmcs/ecological?utm_source=github.com&utm_medium=referral&utm_content=jmcs/ecological&utm_campaign=badger
-   
-.. image:: https://api.codacy.com/project/badge/Coverage/1ff45d0e1a5a40b8ad0569e3edb0539d    
+
+.. image:: https://api.codacy.com/project/badge/Coverage/1ff45d0e1a5a40b8ad0569e3edb0539d
    :target: https://www.codacy.com/app/jmcs/ecological?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jmcs/ecological&amp;utm_campaign=Badge_Coverage
 
 ==========
@@ -33,7 +33,7 @@ And then set the environment variables ``PORT``, ``DEBUG`` and ``LOG_LEVEL``. ``
 class properties from the environment variables with the same (but upper cased) name.
 
 By default the values are set at the class definition type and assigned to the class itself (i.e. the class doesn't need to be
-instantiated). If needed this behavior can be changed (see the next section).
+instantiated). If needed this behavior can be changed (see the Autoloading section).
 
 Tutorial
 --------
@@ -105,8 +105,8 @@ All possible options and their meaning can be found in the table below:
 +-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
 | Option            | Class level   | Variable level  | Default                                         | Description                                                       |
 +===================+===============+=================+=================================================+===================================================================+
-| ``prefix``        | yes           | no              | ``None``                                        | A prefix that is prepended when a variable name is derived from   |
-|                   |               |                 |                                                 | an attribute name.                                                |
+| ``prefix``        | yes           | no              | ``None``                                        | A prefix that is uppercased and prepended when a variable name    |
+|                   |               |                 |                                                 | is derived from an attribute name.                                |
 +-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
 | ``variable_name`` | yes           | yes             | Derived from attribute name and prefixed        | When specified on the variable level it states                    |
 |                   |               |                 | with ``prefix`` if specified; uppercased.       | the exact name of the source variable that will be used.          |
@@ -135,7 +135,7 @@ All possible options and their meaning can be found in the table below:
 |                   |               |                 |                                                 | as a default when the annotation is not provided:                 |
 |                   |               |                 |                                                 |                                                                   |
 |                   |               |                 |                                                 | ``class MyConfig(ecological.Config, wanted_type=int, ...)``       |
-+-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+ 
++-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
 
 The following rules apply when options are resolved:
 
