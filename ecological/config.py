@@ -128,7 +128,7 @@ class Variable:
         except KeyError:
             if self.default is _NO_DEFAULT:
                 raise AttributeError(
-                    f"Configuration error: '{self.variable_name}' is not set."
+                    f"Configuration error: {self.variable_name!r} is not set."
                 ) from None
             else:
                 return self.default
@@ -137,7 +137,7 @@ class Variable:
             return self.transform(raw_value, self.wanted_type)
         except (ValueError, SyntaxError) as e:
             raise ValueError(
-                f"Invalid configuration for '{self.variable_name}'."
+                f"Invalid configuration for {self.variable_name!r}."
             ) from e
 
 

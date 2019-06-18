@@ -93,7 +93,7 @@ value for an attribute or by specifying global options on the class level:
 
 .. code-block:: python
 
-    my_source: Dict = {"KEY1": "VALUE1"}
+    my_source = {"KEY1": "VALUE1"}
 
     class Configuration(ecological.Config, transform=lambda v, wt: v, wanted_type=int, ...):
         my_var1: WantedType = ecological.Variable(transform=lambda v, wt: wt(v), source=my_source, ...)
@@ -137,11 +137,11 @@ All possible options and their meaning can be found in the table below:
 |                   |               |                 |                                                 | ``class MyConfig(ecological.Config, wanted_type=int, ...)``       |
 +-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+ 
 
-Following rules apply when options are resolved:
+The following rules apply when options are resolved:
 
-- in the case of specyfing options on both levels (variable and class)
+- when options are specified on both levels (variable and class),
   the variable ones take precedence over class ones,
-- when some options are missing on the variable level their defaults
+- when some options are missing on the variable level, their default values
   are taken from the class level,
 - it is not necessary to assign an ``ecological.Variable`` instance to
   change the behavior; it can still be changed on the class level (globally).
