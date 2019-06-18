@@ -1,158 +1,21 @@
-import ast
-import collections
+"""
+The heart of the library.
+See ``README.rst`` and ``Configuration`` class for more details.
+"""
 import dataclasses
 import enum
 import os
 import warnings
-from typing import (Any, AnyStr, ByteString, Callable, Dict, FrozenSet, List,
-                    Optional, Set, Tuple, Type, TypeVar, Union, get_type_hints)
+from typing import Any, Callable, Dict, NewType, Optional, Type, Union, get_type_hints
 
-try:
-    from typing import GenericMeta
-
-    PEP560 = False
-except ImportError:
-    GenericMeta = None
-    PEP560 = True
-
-
-_NOT_IMPORTED = object()
-
-try:  # Types added in Python 3.6.1
-    from typing import Counter, Deque
-except ImportError:
-    Deque = Counter = _NOT_IMPORTED
+# Aliased in order to avoid a conflict with the _Options.transform attribute.
+from . import transform as transform_module
 
 _NO_DEFAULT = object()
-TYPES_THAT_NEED_TO_BE_PARSED = [bool, list, set, tuple, dict]
-TYPING_TO_REGULAR_TYPE = {
-    AnyStr: str,
-    ByteString: bytes,
-    Counter: collections.Counter,
-    Deque: collections.deque,
-    Dict: dict,
-    FrozenSet: frozenset,
-    List: list,
-    Set: set,
-    Tuple: tuple,
-}
-
-WantedType = TypeVar("WantedType")
-
-
-def _cast_typing_old(wanted_type: type) -> type:
-    """
-    Casts typing types in Python < 3.7
-    """
-    wanted_type = TYPING_TO_REGULAR_TYPE.get(wanted_type, wanted_type)
-    if isinstance(wanted_type, GenericMeta):
-        # Fallback to try to map complex typing types to real types
-        for base in wanted_type.__bases__:
-            # if not isinstance(base, Generic):
-            #    # If it's not a Generic class then it can be a real type
-            #    wanted_type = base
-            #    break
-            if base in TYPING_TO_REGULAR_TYPE:
-                # The mapped type in bases is most likely the base type for complex types
-                # (for example List[int])
-                wanted_type = TYPING_TO_REGULAR_TYPE[base]
-                break
-    return wanted_type
-
-
-def _cast_typing_pep560(wanted_type: type) -> type:
-    """
-    Casts typing types in Python >= 3.7
-    See https://www.python.org/dev/peps/pep-0560/
-    """
-    # If it's in the dict in Python >= 3.7 we know how to handle it
-    if wanted_type in TYPING_TO_REGULAR_TYPE:
-        return TYPING_TO_REGULAR_TYPE.get(wanted_type, wanted_type)
-
-    try:
-        return wanted_type.__origin__
-    except AttributeError:  # This means it's (probably) not a typing type
-        return wanted_type
-
-
-def cast(representation: str, wanted_type: type):
-    """
-    Casts the string ``representation`` to the ``wanted type``.
-    This function also supports some ``typing`` types by mapping them to 'real' types.
-
-    Some types, like ``bool`` and ``list``, need to be parsed with ast.
-    """
-    # The only distinguishing feature of NewType (both before and after PEP560)
-    # is its __supertype__ field, which it is the only "typing" member to have.
-    # Since newtypes can be nested, we process __supertype__ as long as available.
-    while hasattr(wanted_type, "__supertype__"):
-        wanted_type = wanted_type.__supertype__
-
-    # If it's another typing type replace it with the real type
-    if PEP560:  # python >= 3.7
-        wanted_type = _cast_typing_pep560(wanted_type)
-    else:
-        wanted_type = _cast_typing_old(wanted_type)
-
-    if wanted_type in TYPES_THAT_NEED_TO_BE_PARSED:
-        value = (
-            ast.literal_eval(representation)
-            if isinstance(representation, str)
-            else representation
-        )
-        return wanted_type(value)
-    else:
-        return wanted_type(representation)
-
-
-class Variable:
-    """
-    Class to handle specific properties
-    """
-
-    def __init__(
-        self,
-        variable_name: str,
-        default=_NO_DEFAULT,
-        *,
-        transform: Callable[[str, type], Any] = cast,
-    ):
-        """
-        :param variable_name: Environment variable to get
-        :param default: Default value.
-        :param transform: function to convert the env string to the wanted type
-        """
-        self.name = variable_name
-        self.default = default
-        self.transform = transform
-
-    def get(self, wanted_type: WantedType) -> Union[WantedType, Any]:
-        """
-        Gets ``self.variable_name`` from the environment and tries to cast it to ``wanted_type``.
-
-        If ``self.default`` is ``_NO_DEFAULT`` and the env variable is not set this will raise an
-        ``AttributeError``, if the ``self.default`` is set to something else, its value will be
-        returned.
-
-        If casting fails, this function will raise a ``ValueError``.
-
-        :param wanted_type: type to return
-        :return: value as wanted_type
-        """
-        try:
-            raw_value = os.environ[self.name]
-        except KeyError:
-            if self.default is _NO_DEFAULT:
-                raise AttributeError(f"Configuration error: '{self.name}' is not set.")
-            else:
-                return self.default
-
-        try:
-            value = self.transform(raw_value, wanted_type)
-        except (ValueError, SyntaxError) as e:
-            raise ValueError(f"Invalid configuration for '{self.name}': {e}.")
-
-        return value
+VariableName = NewType("VariableName", Union[str, bytes])
+VariableValue = NewType("VariableValue", Union[str, bytes])
+Source = NewType("Source", Dict[VariableName, VariableValue])
+TransformCallable = NewType("TransformCallable", Callable[[VariableValue, Type], Any])
 
 
 class Autoload(enum.Enum):
@@ -162,7 +25,7 @@ class Autoload(enum.Enum):
 
     - ``Autoload.CLASS`` - load variable values to class on its subclass creation,
     - ``Autoload.OBJECT`` - load variable values to object instance on its initialization,
-    - ``Autoload.NEVER`` - does not perform any autoloading; ``Config.load`` method needs to called explicitly.
+    - ``Autoload.NEVER`` - does not perform any autoloading; ``Config.load`` method needs to be called explicitly.
     """
 
     CLASS = "CLASS"
@@ -170,25 +33,47 @@ class Autoload(enum.Enum):
     NEVER = "NEVER"
 
 
+def _generate_environ_name(
+    attr_name: str, prefix: Optional[str] = None
+) -> VariableName:
+    """
+    Outputs an environment variable name based on the ``Configuration``'s
+    subclass attribute name and the optional prefix.
+
+    >>> _generate_environ_name("attr_name", prefix="prefixed")
+    "PREFIXED_ATTR_NAME"
+    """
+    variable_name = ""
+    if prefix:
+        variable_name += f"{prefix}_"
+    variable_name += attr_name
+
+    return variable_name.upper()
+
+
 @dataclasses.dataclass
 class _Options:
     """
-    Acts as a container for metaclass keyword arguments provided during 
-    ``Config`` class creation. 
+    Acts as the container for metaclass keyword arguments provided during
+    ``Config`` class creation.
     """
 
     prefix: Optional[str] = None
     autoload: Autoload = Autoload.CLASS
+    source: Source = os.environ
+    transform: TransformCallable = transform_module.cast
+    wanted_type: Type = str
+    variable_name: Callable[[str, Optional[str]], VariableName] = _generate_environ_name
 
     @classmethod
-    def from_metaclass_kwargs(cls, metaclass_kwargs: Dict) -> "Options":
+    def from_dict(cls, options_dict: Dict) -> "_Options":
         """
         Produces ``_Options`` instance from given dictionary.
-        Items are deleted from ``metaclass_kwargs`` as a side-effect.
+        Items are deleted from ``options_dict`` as a side-effect.
         """
         options_kwargs = {}
         for field in dataclasses.fields(cls):
-            value = metaclass_kwargs.pop(field.name, None)
+            value = options_dict.pop(field.name, None)
             if value is None:
                 continue
 
@@ -198,7 +83,61 @@ class _Options:
             return cls(**options_kwargs)
         except TypeError as e:
             raise ValueError(
-                f"Invalid options for Config class: {metaclass_kwargs}."
+                f"Invalid options for Config class: {options_dict}."
+            ) from e
+
+
+@dataclasses.dataclass
+class Variable:
+    """
+    Represents a single variable from the configuration source
+    and user preferences how to process it.
+    """
+
+    variable_name: Optional[VariableName] = None
+    default: Any = _NO_DEFAULT
+    transform: Optional[TransformCallable] = None
+    source: Optional[Source] = None
+    wanted_type: Type = dataclasses.field(init=False)
+
+    def set_defaults(
+        self,
+        *,
+        variable_name: VariableName,
+        transform: TransformCallable,
+        source: Source,
+        wanted_type: Type,
+    ):
+        """
+        Sets missing properties of the instance of `Variable`` in order to
+        be able to fetch its value with the ``Variable.get`` method.
+        """
+        self.variable_name = self.variable_name or variable_name
+        self.transform = self.transform or transform
+        self.source = self.source or source
+        self.wanted_type = wanted_type
+
+    def get(self) -> VariableValue:
+        """
+        Fetches a value of variable from the ``self.source`` and invoke the
+        ``self.transform`` operation on it. Falls back to ``self.default``
+        if the value is not found.
+        """
+        try:
+            raw_value = self.source[self.variable_name]
+        except KeyError:
+            if self.default is _NO_DEFAULT:
+                raise AttributeError(
+                    f"Configuration error: {self.variable_name!r} is not set."
+                ) from None
+            else:
+                return self.default
+
+        try:
+            return self.transform(raw_value, self.wanted_type)
+        except (ValueError, SyntaxError) as e:
+            raise ValueError(
+                f"Invalid configuration for {self.variable_name!r}."
             ) from e
 
 
@@ -219,7 +158,7 @@ class Config:
 
     It is possible to defer the calculation of attribute values by specifying the ``autoload``
     keyword argument on your class definition. For possible strategies see the ``Autoload`` class definition.
-    
+
     Caveats and Known Limitations
     =============================
 
@@ -234,7 +173,7 @@ class Config:
     _options: _Options
 
     def __init_subclass__(cls, **kwargs):
-        cls._options = _Options.from_metaclass_kwargs(kwargs)
+        cls._options = _Options.from_dict(kwargs)
         super().__init_subclass__(**kwargs)
         if cls._options.autoload is Autoload.CLASS:
             cls.load(cls)
@@ -248,64 +187,47 @@ class Config:
     @classmethod
     def load(cls: "Config", target_obj: Optional[object] = None):
         """
-        The class' ``attribute_dict`` includes attributes with a default value and some special
-        keys like ``__annotations__`` which includes annotations of all attributes, including the
-        ones that don't have a value.
-
-        To simplify the class building process the annotated attributes that don't have a value
-        in the ``attribute_dict`` are injected with a ``_NO_DEFAULT`` sentinel object.
-
-        After this all the public attributes of the class are iterated over and one
-        of three things is performed:
-
-        - If the attribute value is an instance of ``Config`` it is kept as is to allow nested
-            configuration.
-        - If the attribute value is of type ``Variable``, ``Config`` will call its ``get``
-            method with the attribute's annotation type as the only parameter
-        - Otherwise, ``Config`` will create a ``Variable`` instance, with
-            "{prefix}_{attribute_name}" as the environment variable name and the attribute value
-            (the default value or ``_NO_DEFAULT``) and do the same process as in the previous point.
+        Fetches and converts values of variables declared as attributes on ``cls`` according
+        to their specification and finally assigns them to the corresponding attributes
+        on ``target_obj`` (which by default is ``cls`` itself).
         """
         target_obj = target_obj or cls
-        annotations: Dict[str, type] = get_type_hints(cls)
-        attribute_dict = vars(cls).copy()
-        prefix = cls._options.prefix
+        cls_dict = vars(cls).copy()
+        attr_types: Dict[str, type] = get_type_hints(cls)
+        # There is no single place that has all class attributes regardless of
+        # having default value or not. Thus the keys of cls.__annotations__ and
+        # cls.__dict__ are merged providing a complete list.
+        attr_names = set(cls_dict).union(attr_types.keys())
 
-        # Add attributes without defaults to the the attribute dict
-        attribute_dict.update(
-            {
-                attribute_name: _NO_DEFAULT
-                for attribute_name in annotations.keys()
-                if attribute_name not in attribute_dict
-            }
-        )
+        for attr_name in attr_names:
+            # Omit private and nested configuration attributes
+            # (Attribute value can be the instance of Config itself).
+            if attr_name.startswith("_") or isinstance(attr_name, cls):
+                continue
+            attr_value = cls_dict.get(attr_name, _NO_DEFAULT)
+            attr_type = attr_types.get(attr_name, cls._options.wanted_type)
 
-        for attribute_name, default_value in attribute_dict.items():
-            if attribute_name.startswith("_"):
-                # private attributes are not changed
-                continue
-            if isinstance(default_value, Variable):
-                attribute = default_value
-            elif isinstance(default_value, Config):
-                # passthrough for nested configs
-                setattr(target_obj, attribute_name, default_value)
-                continue
+            if isinstance(attr_value, Variable):
+                variable = attr_value
             else:
-                if prefix:
-                    env_variable_name = f"{prefix}_{attribute_name}".upper()
-                else:
-                    env_variable_name = attribute_name.upper()
-                attribute = Variable(env_variable_name, default_value)
+                variable = Variable(default=attr_value)
+            variable.set_defaults(
+                variable_name=cls._options.variable_name(
+                    attr_name, prefix=cls._options.prefix
+                ),
+                transform=cls._options.transform,
+                source=cls._options.source,
+                wanted_type=attr_type,
+            )
 
-            attribute_type = annotations.get(
-                attribute_name, str
-            )  # by default attributes are strings
-            value = attribute.get(attribute_type)
-            setattr(target_obj, attribute_name, value)
+            setattr(target_obj, attr_name, variable.get())
 
 
-# DEPRECATED: For backward compatibility purposes only
 class AutoConfig(Config, autoload=Autoload.NEVER):
+    """
+    DEPRECATED: For backward compatibility purposes only; please use ``ecological.Config`` instead.
+    """
+
     def __init_subclass__(cls, prefix: Optional[str] = None, **kwargs):
         warnings.warn(
             "ecological.AutoConfig is deprecated, please use ecological.Config instead.",

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 import typing
 
 import pytest
@@ -203,3 +204,70 @@ def test_config_autoload_is_ignored_on_autoconfig():
 
         class Configuration(ecological.AutoConfig, autoload=ecological.Autoload.NEVER):
             my_var1: str
+
+
+def test_variable_is_loaded_from_source(monkeypatch, base_class):
+    monkeypatch.setitem(os.environb, b"A_BYTES", b"a-bytes-value")
+
+    class Configuration(base_class):
+        a_bytes: bytes = ecological.Variable(b"A_BYTES", source=os.environb)
+
+    assert Configuration.a_bytes == b"a-bytes-value"
+
+
+def test_global_transform_option_is_used_as_default(monkeypatch):
+    monkeypatch.setenv("IMPLICIT", "a")
+    monkeypatch.setenv("VAR_WITH_TRANSFORM", "b")
+    monkeypatch.setenv("VAR_WITHOUT_TRANSFORM", "c")
+
+    class Configuration(ecological.Config, transform=lambda *args: "GLOBAL_TRANSFORM"):
+        implicit: str
+        var_without_transform = ecological.Variable("VAR_WITHOUT_TRANSFORM")
+        var_with_transform: int = ecological.Variable(
+            "VAR_WITH_TRANSFORM", transform=lambda *args: "VAR_TRANSFORM"
+        )
+
+    assert Configuration.implicit == "GLOBAL_TRANSFORM"
+    assert Configuration.var_with_transform == "VAR_TRANSFORM"
+    assert Configuration.var_without_transform == "GLOBAL_TRANSFORM"
+
+
+def test_global_source_option_is_used_as_default(monkeypatch):
+    my_dict = {"IMPLICIT": "a", "VAR_WITHOUT_SOURCE": "b"}
+    monkeypatch.setenv("VAR_WITH_SOURCE", "c")
+
+    class Configuration(ecological.Config, source=my_dict):
+        implicit: str
+        var_without_source = ecological.Variable("VAR_WITHOUT_SOURCE")
+        var_with_source = ecological.Variable("VAR_WITH_SOURCE", source=os.environ)
+
+    assert Configuration.implicit == "a"
+    assert Configuration.var_without_source == "b"
+    assert Configuration.var_with_source == "c"
+
+
+def test_global_wanted_type_option_is_used_as_default(monkeypatch):
+    monkeypatch.setenv("IMPLICIT_1", "1")
+    monkeypatch.setenv("IMPLICIT_WITH_TYPE_2", "2")
+
+    class Configuration(ecological.Config, wanted_type=int):
+        implicit_1 = 99
+        implicit_with_type_2: str
+
+    assert Configuration.implicit_1 == 1
+    assert Configuration.implicit_with_type_2 == "2"
+
+
+def test_variable_name_is_calculation_is_used_as_default(monkeypatch):
+    monkeypatch.setenv("IMPLICIT_THIS_IS_CRAZY", "1")
+    monkeypatch.setenv("MY_ARBITRARY_NAME", "2")
+
+    def my_variable_name(attr_name, prefix=None):
+        return (attr_name + "_THIS_IS_CRAZY").upper()
+
+    class Configuration(ecological.Config, variable_name=my_variable_name):
+        implicit: str
+        var_with_name = ecological.Variable("MY_ARBITRARY_NAME")
+
+    assert Configuration.implicit == "1"
+    assert Configuration.var_with_name == "2"
