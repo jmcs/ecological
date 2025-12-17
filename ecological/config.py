@@ -2,20 +2,38 @@
 The heart of the library.
 See ``README.rst`` and ``Configuration`` class for more details.
 """
+
 import dataclasses
 import enum
 import os
 import warnings
-from typing import Any, Callable, Dict, NewType, Optional, Type, Union, get_type_hints
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    Protocol,
+    Type,
+    get_type_hints,
+    cast as typing_cast,
+)
 
 # Aliased in order to avoid a conflict with the _Options.transform attribute.
 from . import transform as transform_module
 
 _NO_DEFAULT = object()
-VariableName = NewType("VariableName", Union[str, bytes])
-VariableValue = NewType("VariableValue", Union[str, bytes])
-Source = NewType("Source", Dict[VariableName, VariableValue])
-TransformCallable = NewType("TransformCallable", Callable[[VariableValue, Type], Any])
+VariableName = str
+VariableValue = str | bytes
+Source = Dict[VariableName, VariableValue]
+
+
+class TransformCallable(Protocol):
+    def __call__(self, representation: str, wanted_type: Type) -> Any: ...
+
+
+class VariableNameFactory(Protocol):
+    def __call__(
+        self, attr_name: str, prefix: Optional[str] = None
+    ) -> VariableName: ...
 
 
 class Autoload(enum.Enum):
@@ -60,10 +78,10 @@ class _Options:
 
     prefix: Optional[str] = None
     autoload: Autoload = Autoload.CLASS
-    source: Source = os.environ
+    source: Source = dataclasses.field(default_factory=lambda: os.environ)
     transform: TransformCallable = transform_module.cast
     wanted_type: Type = str
-    variable_name: Callable[[str, Optional[str]], VariableName] = _generate_environ_name
+    variable_name: VariableNameFactory = _generate_environ_name
 
     @classmethod
     def from_dict(cls, options_dict: Dict) -> "_Options":
@@ -94,10 +112,10 @@ class Variable:
     and user preferences how to process it.
     """
 
-    variable_name: Optional[VariableName] = None
+    variable_name: VariableName | None = None
     default: Any = _NO_DEFAULT
-    transform: Optional[TransformCallable] = None
-    source: Optional[Source] = None
+    transform: TransformCallable | None = None
+    source: Source | None = None
     wanted_type: Type = dataclasses.field(init=False)
 
     def set_defaults(
@@ -123,6 +141,12 @@ class Variable:
         ``self.transform`` operation on it. Falls back to ``self.default``
         if the value is not found.
         """
+        if self.source is None:
+            raise ValueError("Source for variable is not set.")
+
+        if self.variable_name is None:
+            raise ValueError("Variable name is not set.")
+
         try:
             raw_value = self.source[self.variable_name]
         except KeyError:
@@ -133,8 +157,13 @@ class Variable:
             else:
                 return self.default
 
+        if self.transform is None:
+            raise ValueError(
+                f"Transform function for {self.variable_name!r} is not set."
+            )
+
         try:
-            return self.transform(raw_value, self.wanted_type)
+            return self.transform(typing_cast(str, raw_value), self.wanted_type)
         except (ValueError, SyntaxError) as e:
             raise ValueError(
                 f"Invalid configuration for {self.variable_name!r}."
@@ -185,7 +214,7 @@ class Config:
             cls.load(self)
 
     @classmethod
-    def load(cls: "Config", target_obj: Optional[object] = None):
+    def load(cls: Type["Config"], target_obj: Optional[object] = None):
         """
         Fetches and converts values of variables declared as attributes on ``cls`` according
         to their specification and finally assigns them to the corresponding attributes
@@ -202,9 +231,11 @@ class Config:
         for attr_name in attr_names:
             # Omit private and nested configuration attributes
             # (Attribute value can be the instance of Config itself).
-            if attr_name.startswith("_") or isinstance(attr_name, cls):
+            if attr_name.startswith("_"):
                 continue
             attr_value = cls_dict.get(attr_name, _NO_DEFAULT)
+            if type(attr_value) is cls:
+                continue
             attr_type = attr_types.get(attr_name, cls._options.wanted_type)
 
             if isinstance(attr_value, Variable):

@@ -8,3 +8,4 @@ tox.ini
 .pytest_cache/
 .python-version
 .vscode/
+dist/
