@@ -22,3 +22,6 @@ lint:
 .PHONY: format
 format:
 	uv run ruff format ecological/
+
+.PHONY: check-all
+check-all: test typecheck lint

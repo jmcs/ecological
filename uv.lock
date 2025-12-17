@@ -145,7 +145,7 @@ requires-dist = [{ name = "dataclasses", specifier = ">=0.8.0,<1.0.0" }]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pygments", specifier = ">=2.4.0,<3.0.0" },
+    { name = "pygments", specifier = ">=2.19.2,<3.0.0" },
     { name = "pytest", specifier = ">=9.0.0,<10.0.0" },
     { name = "pytest-cov", specifier = ">=7.0.0,<8.0.0" },
     { name = "ruff" },
@@ -193,11 +193,11 @@ wheels = [
 
 [[package]]
 name = "pygments"
-version = "2.14.0"
+version = "2.19.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/da/6a/c427c06913204e24de28de5300d3f0e809933f376e0b7df95194b2bb3f71/Pygments-2.14.0.tar.gz", hash = "sha256:b3ed06a9e8ac9a9aae5a6f5dbe78a8a58655d17b43b93c078f094ddc476ae297", size = 4434562 }
+sdist = { url = "https://files.pythonhosted.org/packages/b0/77/a5b8c569bf593b0140bde72ea885a803b82086995367bf2037de0159d924/pygments-2.19.2.tar.gz", hash = "sha256:636cb2477cec7f8952536970bc533bc43743542f70392ae026374600add5b887", size = 4968631 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/42/d9d95cc461f098f204cd20c85642ae40fbff81f74c300341b8d0e0df14e0/Pygments-2.14.0-py3-none-any.whl", hash = "sha256:fa7bd7bd2771287c0de303af8bfdfc731f51bd2c6a47ab69d117138893b82717", size = 1123889 },
+    { url = "https://files.pythonhosted.org/packages/c7/21/705964c7812476f378728bdf590ca4b771ec72385c533964653c68e86bdc/pygments-2.19.2-py3-none-any.whl", hash = "sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b", size = 1225217 },
 ]
 
 [[package]]
