@@ -60,7 +60,7 @@ class _Options:
 
     prefix: Optional[str] = None
     autoload: Autoload = Autoload.CLASS
-    source: Source = os.environ
+    source: Source = dataclasses.field(default_factory=lambda: os.environ)
     transform: TransformCallable = transform_module.cast
     wanted_type: Type = str
     variable_name: Callable[[str, Optional[str]], VariableName] = _generate_environ_name
