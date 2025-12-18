@@ -1,6 +1,6 @@
 [project]
 name = "ecological"
-version = "3.0.0"
+version = "3.0.1"
 description = "Map a Python configuration from environment variables"
 readme = "README.rst"
 license = { file = "LICENSE" }
@@ -14,9 +14,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent"
-]
-dependencies = [
-    "dataclasses>=0.8.0,<1.0.0"
 ]
 
 [project.urls]
