@@ -234,7 +234,10 @@ class Config:
             if attr_name.startswith("_"):
                 continue
             attr_value = cls_dict.get(attr_name, _NO_DEFAULT)
-            if type(attr_value) is cls:
+            # Keep nested Config subclasses intact instead of treating them as
+            # loadable variables (for example, avoid replacing Nested with
+            # the value of an unrelated NESTED environment variable).
+            if isinstance(attr_value, type) and issubclass(attr_value, Config):
                 continue
             attr_type = attr_types.get(attr_name, cls._options.wanted_type)
 

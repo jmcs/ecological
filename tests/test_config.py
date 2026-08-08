@@ -60,6 +60,22 @@ def test_nested(monkeypatch, base_class):
     assert Configuration.Nested.boolean is False
 
 
+def test_nested_class_is_not_overwritten_by_env_var(monkeypatch, base_class):
+    monkeypatch.setenv("INTEGER", "42")
+    monkeypatch.setenv("NESTED", "overwritten")
+    monkeypatch.setenv("NESTED_BOOLEAN", "True")
+
+    class Configuration(base_class):
+        integer: int
+
+        class Nested(base_class, prefix="nested"):
+            boolean: bool
+
+    assert isinstance(Configuration.Nested, type)
+    assert issubclass(Configuration.Nested, ecological.Config)
+    assert Configuration.Nested.boolean is True
+
+
 def test_explicit_variable(monkeypatch, base_class):
     monkeypatch.setenv("TEST_Integer", "42")
 
