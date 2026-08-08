@@ -5,31 +5,28 @@ mitigating a number of `typing` module quirks that happen across Python versions
 
 import ast
 import collections
+from collections import Counter
+
+# ByteString is going to be removed in Python 3.17 so we will remove it before then
+from collections.abc import ByteString  # noqa: PYI057
 from typing import (
     AnyStr,
-    ByteString,
-    Dict,
-    FrozenSet,
-    List,
-    Set,
-    Tuple,
-    Counter,
-    Deque,
+)
+from typing import (
     cast as typing_cast,
 )
-
 
 TYPES_THAT_NEED_TO_BE_PARSED = [bool, list, set, tuple, dict]
 TYPING_TO_REGULAR_TYPE = {
     AnyStr: str,
     ByteString: bytes,
     Counter: collections.Counter,
-    Deque: collections.deque,
-    Dict: dict,
-    FrozenSet: frozenset,
-    List: list,
-    Set: set,
-    Tuple: tuple,
+    collections.deque: collections.deque,
+    dict: dict,
+    frozenset: frozenset,
+    list: list,
+    set: set,
+    tuple: tuple,
 }
 
 
