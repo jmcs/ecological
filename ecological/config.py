@@ -167,8 +167,12 @@ class Variable:
         try:
             return self.transform(typing_cast(str, raw_value), self.wanted_type)
         except (ValueError, SyntaxError) as e:
+            if self.wanted_type is bool:
+                raise ValueError(
+                    f"Invalid configuration for {self.variable_name!r}: expected 'True' or 'False' but got {raw_value!r}"
+                ) from e
             raise ValueError(
-                f"Invalid configuration for {self.variable_name!r}."
+                f"Invalid configuration for {self.variable_name!r}: value {raw_value!r} is not a valid {self.wanted_type.__name__}"
             ) from e
 
 
