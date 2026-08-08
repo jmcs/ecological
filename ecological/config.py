@@ -9,11 +9,10 @@ import os
 import warnings
 from typing import (
     Any,
-    Dict,
-    Optional,
     Protocol,
-    Type,
     get_type_hints,
+)
+from typing import (
     cast as typing_cast,
 )
 
@@ -23,17 +22,15 @@ from . import transform as transform_module
 _NO_DEFAULT = object()
 VariableName = str
 VariableValue = str | bytes
-Source = Dict[VariableName, VariableValue]
+Source = dict[VariableName, VariableValue]
 
 
 class TransformCallable(Protocol):
-    def __call__(self, representation: str, wanted_type: Type) -> Any: ...
+    def __call__(self, representation: str, wanted_type: type) -> Any: ...
 
 
 class VariableNameFactory(Protocol):
-    def __call__(
-        self, attr_name: str, prefix: Optional[str] = None
-    ) -> VariableName: ...
+    def __call__(self, attr_name: str, prefix: str | None = None) -> VariableName: ...
 
 
 class Autoload(enum.Enum):
@@ -51,9 +48,7 @@ class Autoload(enum.Enum):
     NEVER = "NEVER"
 
 
-def _generate_environ_name(
-    attr_name: str, prefix: Optional[str] = None
-) -> VariableName:
+def _generate_environ_name(attr_name: str, prefix: str | None = None) -> VariableName:
     """
     Outputs an environment variable name based on the ``Configuration``'s
     subclass attribute name and the optional prefix.
@@ -76,15 +71,15 @@ class _Options:
     ``Config`` class creation.
     """
 
-    prefix: Optional[str] = None
+    prefix: str | None = None
     autoload: Autoload = Autoload.CLASS
     source: Source = dataclasses.field(default_factory=lambda: os.environ)
     transform: TransformCallable = transform_module.cast
-    wanted_type: Type = str
+    wanted_type: type = str
     variable_name: VariableNameFactory = _generate_environ_name
 
     @classmethod
-    def from_dict(cls, options_dict: Dict) -> "_Options":
+    def from_dict(cls, options_dict: dict) -> "_Options":
         """
         Produces ``_Options`` instance from given dictionary.
         Items are deleted from ``options_dict`` as a side-effect.
@@ -114,7 +109,7 @@ class Variable:
     default: Any = _NO_DEFAULT
     transform: TransformCallable | None = None
     source: Source | None = None
-    wanted_type: Type = dataclasses.field(init=False)
+    wanted_type: type = dataclasses.field(init=False)
 
     def set_defaults(
         self,
@@ -122,7 +117,7 @@ class Variable:
         variable_name: VariableName,
         transform: TransformCallable,
         source: Source,
-        wanted_type: Type,
+        wanted_type: type,
     ):
         """
         Sets missing properties of the instance of `Variable`` in order to
@@ -219,7 +214,7 @@ class Config:
             cls.load(self)
 
     @classmethod
-    def load(cls: Type["Config"], target_obj: Optional[object] = None):
+    def load(cls: type["Config"], target_obj: object | None = None):
         """
         Fetches and converts values of variables declared as attributes on ``cls`` according
         to their specification and finally assigns them to the corresponding attributes
@@ -227,7 +222,7 @@ class Config:
         """
         target_obj = target_obj or cls
         cls_dict = vars(cls).copy()
-        attr_types: Dict[str, type] = get_type_hints(cls)
+        attr_types: dict[str, type] = get_type_hints(cls)
         # There is no single place that has all class attributes regardless of
         # having default value or not. Thus the keys of cls.__annotations__ and
         # cls.__dict__ are merged providing a complete list.
@@ -267,7 +262,7 @@ class AutoConfig(Config, autoload=Autoload.NEVER):
     DEPRECATED: For backward compatibility purposes only; please use ``ecological.Config`` instead.
     """
 
-    def __init_subclass__(cls, prefix: Optional[str] = None, **kwargs):
+    def __init_subclass__(cls, prefix: str | None = None, **kwargs):
         warnings.warn(
             "ecological.AutoConfig is deprecated, please use ecological.Config instead.",
             DeprecationWarning,

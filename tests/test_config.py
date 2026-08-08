@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import os
 import typing
 
@@ -33,9 +31,9 @@ def test_regular_types(monkeypatch, base_class):
         boolean: bool
         any_str: typing.AnyStr
         default: str = "Default Value"
-        text: typing.Text
-        dict: typing.Dict[str, str]
-        list: typing.List[int]
+        text: str
+        dict: dict[str, str]
+        list: list[int]
 
     assert Configuration.integer == 42
     assert Configuration.boolean is False
@@ -121,7 +119,7 @@ def test_invalid_value_parsed_type(monkeypatch, base_class):
     with pytest.raises(ValueError, match="Invalid configuration for 'PARAM_PARSED_TYPE': value 'not a list' is not a valid list"):
 
         class Configuration(base_class):
-            param_parsed_type: list = ["param_1", "param_2"]
+            param_parsed_type: list = ["param_1", "param_2"]  # noqa: RUF012
 
 
 def test_invalid_value_boolean_type(monkeypatch, base_class):
@@ -167,7 +165,7 @@ def test_nested_newtype(monkeypatch, base_class):
 def test_parametric_newtype(monkeypatch, base_class):
     monkeypatch.setenv("INTEGERS", "[1, 2, 3]")
 
-    ListOfIntegers = typing.NewType("ListOfIntegers", typing.List[int])
+    ListOfIntegers = typing.NewType("ListOfIntegers", list[int])
 
     class Configuration(base_class):
         integers: ListOfIntegers
@@ -181,7 +179,7 @@ def test_parametric_newtype_with_newtype_parameter(monkeypatch, base_class):
     Integer = typing.NewType("Integer", int)
     Id = typing.NewType("Id", Integer)
 
-    ListOfIds = typing.NewType("ListOfIds", typing.List[Id])
+    ListOfIds = typing.NewType("ListOfIds", list[Id])
 
     MemberIds = typing.NewType("MemberIds", ListOfIds)
 
