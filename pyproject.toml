@@ -1,6 +1,6 @@
 [project]
 name = "ecological"
-version = "3.0.1"
+version = "3.1.0"
 description = "Map a Python configuration from environment variables"
 readme = "README.rst"
 license = { file = "LICENSE" }
@@ -17,8 +17,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jmcs/ecological"
-Repository = "https://github.com/jmcs/ecological"
+Homepage = "https://codeberg.org/jmcs/ecological"
+Repository = "https://codeberg.org/jmcs/ecological"
 
 [dependency-groups]
 dev = [
