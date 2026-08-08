@@ -130,9 +130,11 @@ class Variable:
         Sets missing properties of the instance of `Variable`` in order to
         be able to fetch its value with the ``Variable.get`` method.
         """
-        self.variable_name = self.variable_name or variable_name
-        self.transform = self.transform or transform
-        self.source = self.source or source
+        self.variable_name = (
+            self.variable_name if self.variable_name is not None else variable_name
+        )
+        self.transform = self.transform if self.transform is not None else transform
+        self.source = self.source if self.source is not None else source
         self.wanted_type = wanted_type
 
     def get(self) -> VariableValue:

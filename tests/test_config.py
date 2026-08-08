@@ -231,6 +231,24 @@ def test_variable_is_loaded_from_source(monkeypatch, base_class):
     assert Configuration.a_bytes == b"a-bytes-value"
 
 
+def test_explicit_empty_source_is_not_overridden(monkeypatch):
+    monkeypatch.setenv("A", "from-env")
+
+    with pytest.raises(AttributeError):
+
+        class Configuration(ecological.Config):
+            a: str = ecological.Variable("A", source={})
+
+
+def test_explicit_empty_variable_name_is_not_overridden(monkeypatch):
+    monkeypatch.setenv("A", "from-env")
+
+    with pytest.raises(AttributeError):
+
+        class Configuration(ecological.Config):
+            a: str = ecological.Variable(variable_name="")
+
+
 def test_global_transform_option_is_used_as_default(monkeypatch):
     monkeypatch.setenv("IMPLICIT", "a")
     monkeypatch.setenv("VAR_WITH_TRANSFORM", "b")
