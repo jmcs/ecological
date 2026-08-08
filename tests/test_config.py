@@ -314,3 +314,28 @@ def test_variable_name_is_calculation_is_used_as_default(monkeypatch):
 
     assert Configuration.implicit == "1"
     assert Configuration.var_with_name == "2"
+
+
+def test_variable_error_when_transform_is_none():
+    var = ecological.Variable("VAR", transform=None, source={"VAR": "value"})
+    with pytest.raises(ValueError, match="Transform function for 'VAR' is not set."):
+        var.get()
+
+def test_missing_variable_name():
+    var = ecological.Variable(variable_name=None, source={"VAR": "value"})
+    with pytest.raises(ValueError, match="Variable name is not set."):
+        var.get()
+
+def test_missing_variable_source():
+    var = ecological.Variable(variable_name="VAR", source=None)
+    with pytest.raises(ValueError, match="Source for 'VAR' is not set."):
+        var.get()
+
+def test_config_bad_options():
+    with pytest.raises(
+        ValueError,
+        match="Invalid options for Config class: {'invalid_option': 'value'}.",
+    ):
+
+        class Configuration(ecological.Config, invalid_option="value"):
+            pass

@@ -97,12 +97,10 @@ class _Options:
 
             options_kwargs[field.name] = value
 
-        try:
-            return cls(**options_kwargs)
-        except TypeError as e:
-            raise ValueError(
-                f"Invalid options for Config class: {options_dict}."
-            ) from e
+        if options_dict:
+            raise ValueError(f"Invalid options for Config class: {options_dict}.")
+
+        return cls(**options_kwargs)
 
 
 @dataclasses.dataclass
@@ -143,11 +141,12 @@ class Variable:
         ``self.transform`` operation on it. Falls back to ``self.default``
         if the value is not found.
         """
-        if self.source is None:
-            raise ValueError("Source for variable is not set.")
 
         if self.variable_name is None:
             raise ValueError("Variable name is not set.")
+
+        if self.source is None:
+            raise ValueError(f"Source for {self.variable_name!r} is not set.")
 
         try:
             raw_value = self.source[self.variable_name]
@@ -194,7 +193,7 @@ class Config:
     It is possible to defer the calculation of attribute values by specifying the ``autoload``
     keyword argument on your class definition. For possible strategies see the ``Autoload`` class definition.
 
-    Caveats and Known Limitations
+    Caveats and Known Limitations{self.variable_name!r}
     =============================
 
     - ``Ecological`` doesn't support (public) methods in ``Config`` classes.
