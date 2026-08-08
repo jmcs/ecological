@@ -109,7 +109,7 @@ def test_prefix(monkeypatch, base_class):
 def test_invalid_value_regular_type(monkeypatch, base_class):
     monkeypatch.setenv("PARAM_REGULAR_TYPE", "not an integer")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Invalid configuration for 'PARAM_REGULAR_TYPE': value 'not an integer' is not a valid int"):
 
         class Configuration(base_class):
             param_regular_type: int
@@ -118,10 +118,19 @@ def test_invalid_value_regular_type(monkeypatch, base_class):
 def test_invalid_value_parsed_type(monkeypatch, base_class):
     monkeypatch.setenv("PARAM_PARSED_TYPE", "not a list")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Invalid configuration for 'PARAM_PARSED_TYPE': value 'not a list' is not a valid list"):
 
         class Configuration(base_class):
             param_parsed_type: list = ["param_1", "param_2"]
+
+
+def test_invalid_value_boolean_type(monkeypatch, base_class):
+    monkeypatch.setenv("PARAM_BOOLEAN_TYPE", "true")
+
+    with pytest.raises(ValueError, match="Invalid configuration for 'PARAM_BOOLEAN_TYPE': expected 'True' or 'False' but got 'true'"):
+
+        class Configuration(base_class):
+            param_boolean_type: bool
 
 
 def test_no_default(base_class):
