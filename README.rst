@@ -2,15 +2,14 @@
 Ecological
 ==========
 
-``Ecological`` combines PEP526_ and environment variables to make the configuration of
-`12 factor apps <https://12factor.net/config>`_ easy.
+Python library for managing configuration data from environment variables using PEP 526 annotations.
 
 Getting Started
 ===============
-``Ecological`` automatically gets and converts environment variables according to the configuration class definition.
+``Ecological`` lets you read and convert environment variables according to your configuration class definition.
 
-For example, imagine your application has a configurable (integer) Port and (boolean) Debug flag and a (string) Log
-Level, that is ``INFO`` by default, you could simply declare your configuration as:
+For example, imagine that your application has a configurable integer ``port``, a boolean ``debug`` flag, and a string
+``log_level`` that defaults to ``INFO``. You could declare your configuration as follows:
 
 .. code-block:: python
 
@@ -22,16 +21,16 @@ Level, that is ``INFO`` by default, you could simply declare your configuration 
 And then set the environment variables ``PORT``, ``DEBUG`` and ``LOG_LEVEL``. ``Ecological`` will automatically set the
 class properties from the environment variables with the same (but upper cased) name.
 
-By default the values are set at the class definition type and assigned to the class itself (i.e. the class doesn't need to be
-instantiated). If needed this behavior can be changed (see the Autoloading section).
+By default, Ecological sets the values at class definition time and assigns them to the class itself, so you do not need to
+instantiate the class. If needed, you can change this behavior (see the Autoloading section).
 
 Tutorial
 --------
-The `tutorial <tutorial.ipynb>`_  can be used to get to know with the library's basic features interactively.
+You can use the `tutorial <tutorial.ipynb>`_ to explore the library's basic features interactively.
 
 Typing Support
 ==============
-``Ecological`` also supports some of the types defined in PEP484_, for example:
+You can use ``Ecological`` with several types defined in PEP484_, for example:
 
 .. code-block:: python
 
@@ -41,8 +40,8 @@ Typing Support
 
 Will automatically parse the environment variable value as a list.
 
-.. note:: Please note that while this will ensure ``Configuration.list_of_values`` is a list it will not check that it
-          contains only strings.
+.. note:: While this ensures that ``Configuration.list_of_values`` is a list, it does not verify that it contains only
+          strings.
 
 Prefixed Configuration
 ======================
@@ -54,7 +53,7 @@ You can also decide to prefix your application configuration, for example, to av
         home: str
 
 
-In this case the ``home`` property will be fetched from the ``MYAPP_HOME`` environment property.
+In this case, the ``home`` property will be read from the ``MYAPP_HOME`` environment variable.
 
 Nested Configuration
 =====================
@@ -78,8 +77,8 @@ Fine-grained Control
 ---------------------
 You can control some behavior of how the configuration properties are set.
 
-It can be achieved by providing a ``ecological.Variable`` instance as the default
-value for an attribute or by specifying global options on the class level:
+You can achieve this by providing an ``ecological.Variable`` instance as the default
+value for an attribute, or by specifying global options at the class level:
 
 .. code-block:: python
 
@@ -90,7 +89,7 @@ value for an attribute or by specifying global options on the class level:
         my_var2: str
         # ...
 
-All possible options and their meaning can be found in the table below:
+All available options and their meanings are described in the table below:
 
 +-------------------+---------------+-----------------+-------------------------------------------------+-------------------------------------------------------------------+
 | Option            | Class level   | Variable level  | Default                                         | Description                                                       |
@@ -138,11 +137,11 @@ The following rules apply when options are resolved:
 
 Autoloading
 ------------
-It is possible to defer/disable autoloading (setting) of variable values by specifying the ``autoload`` option on class definition.
+You can defer or disable autoloading of variable values by specifying the ``autoload`` option in the class definition.
 
 On class creation (default)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-When no option is provided values are loaded immediately on class creation and assigned to class attributes:
+When you do not provide an option, values are loaded immediately on class creation and assigned to class attributes:
 
 .. code-block:: python
 
@@ -153,7 +152,7 @@ When no option is provided values are loaded immediately on class creation and a
 
 Never
 ~~~~~
-When this option is chosen, no autoloading happens. In order to set variable values, the ``Config.load`` method needs to be called explicitly:
+When you choose this option, no autoloading happens. To set variable values, you must call the ``Config.load`` method explicitly:
 
 .. code-block:: python
 
@@ -168,7 +167,7 @@ When this option is chosen, no autoloading happens. In order to set variable val
 
 On object instance initialization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-If it is preferred to load and store attribute values on the object instance instead of the class itself, the ``Autoload.OBJECT`` strategy can be used:
+If you prefer to load and store attribute values on the object instance instead of the class itself, the ``Autoload.OBJECT`` strategy can be used:
 
 .. code-block:: python
 
